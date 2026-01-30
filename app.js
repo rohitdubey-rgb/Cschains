@@ -2,7 +2,7 @@
 // Client-side logic: fetch data, render UI, charts, search/typeahead, actions.
 // IMPORTANT: Set API_URL to the deployed Apps Script web app URL.
 
-const API_URL = "https://script.google.com/macros/s/AKfycbxFexXetdrq2W4gfzME1dKDhP0UwDgICbwD3hd-dq0-y2WOjPYYRDvMJ6fNs_z2X8DaxQ/exec"; // e.g. https://script.google.com/macros/s/AKfyc.../exec
+const API_URL = "https://script.google.com/macros/s/AKfycbwsIP0OipyJRA6uG6dmvMO4RdiOSegyVOaIfXovR0HJpyRnlq0DmzLG1Bh0GtEishLvtA/exec"; // e.g. https://script.google.com/macros/s/AKfyc.../exec
 
 // State
 let rows = [];
