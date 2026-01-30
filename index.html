@@ -2,20 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>CSC — Customer Dashboard</title>
+  <title>CSC Customer Dashboard</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-
-  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
 
 <header class="header">
-  <div class="brand">
-    <h1>CSC Customer Dashboard</h1>
-  </div>
+  <h1>CSC Customer Dashboard</h1>
 
   <div class="controls">
-    <input id="searchInput" placeholder="Search or type company..." />
     <select id="companySelect">
       <option value="">Select a company</option>
     </select>
@@ -23,7 +19,7 @@
   </div>
 </header>
 
-<div class="mainContent">
+<main>
   <div id="customer"></div>
   <div id="leadOrigin"></div>
   <div id="owner"></div>
@@ -36,8 +32,9 @@
 
   <h3>Notes</h3>
   <div id="notes"></div>
-</div>
+</main>
 
+<!-- JS MUST BE LAST -->
 <script src="./app.js"></script>
 </body>
 </html>
