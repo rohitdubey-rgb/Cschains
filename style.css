@@ -2,37 +2,23 @@ body {
   font-family: Arial, sans-serif;
   padding: 20px;
   background: #f4f6f8;
-  color: #111;
+}
+
+body.dark {
+  background: #111;
+  color: #fff;
 }
 
 .header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  margin-bottom: 20px;
 }
 
-.controls input,
-.controls select {
-  padding: 8px;
-  margin-right: 8px;
-  min-width: 160px;
-}
-
-button {
-  padding: 8px;
-  cursor: pointer;
-}
-
-#progressBadges span {
+span {
   display: inline-block;
   margin-right: 8px;
-  padding: 6px 10px;
-  border-radius: 20px;
-  background: #eee;
-  color: #333;
-}
-
-a {
-  color: blue;
-  text-decoration: underline;
+  padding: 4px 8px;
+  background: #ddd;
+  border-radius: 12px;
 }
