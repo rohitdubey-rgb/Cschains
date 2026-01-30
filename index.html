@@ -4,94 +4,40 @@
   <meta charset="utf-8" />
   <title>CSC — Customer Dashboard</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
-  <!-- Chart.js CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
-  <script src="app.js" defer></script>
+
+  <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-  <div class="wrap">
-    <header class="topbar">
-      <div class="brand">
-        <div class="logo">CSC</div>
-        <div class="title">Customer Dashboard</div>
-      </div>
 
-      <div class="controls">
-        <input id="searchInput" placeholder="Search or type company..." aria-label="Search company" />
-        <select id="companySelect" aria-label="Select company">
-          <option value="">Select a company</option>
-        </select>
-
-        <button id="themeToggle" title="Toggle theme">🌗</button>
-      </div>
-    </header>
-
-    <main>
-      <section class="gridTop">
-        <div class="card infoCard">
-          <label>Customer</label>
-          <div id="customer" class="value"></div>
-        </div>
-        <div class="card infoCard">
-          <label>Lead Origin</label>
-          <div id="leadOrigin" class="value"></div>
-        </div>
-        <div class="card infoCard">
-          <label>Strategic Owner</label>
-          <div id="owner" class="value"></div>
-        </div>
-      </section>
-
-      <section class="tabsWrap card">
-        <div class="tabs">
-          <button class="tab active" data-tab="overview">Overview</button>
-          <button class="tab" data-tab="pilot">Pilot</button>
-          <button class="tab" data-tab="commercial">Commercials</button>
-          <button class="tab" data-tab="activity">Activity</button>
-        </div>
-
-        <div class="tabContent" id="overview">
-          <h3>Progress</h3>
-          <div id="progressBadges" class="badgesRow"></div>
-
-          <h3 style="margin-top:18px">Phase Visual</h3>
-          <canvas id="phaseChart" height="80"></canvas>
-        </div>
-
-        <div class="tabContent hidden" id="pilot">
-          <h3>Pilot & Delivery</h3>
-          <div id="pilotInfo"></div>
-        </div>
-
-        <div class="tabContent hidden" id="commercial">
-          <h3>Documents</h3>
-          <div id="pptLink"></div>
-          <div style="margin-top:12px;">
-            <button id="downloadJSON">Download JSON</button>
-            <button id="copyLink">Copy Page Link</button>
-          </div>
-        </div>
-
-        <div class="tabContent hidden" id="activity">
-          <h3>Notes</h3>
-          <div id="notes"></div>
-        </div>
-      </section>
-
-      <section class="summaryRow">
-        <div class="card wide">
-          <h3>Pipeline Overview</h3>
-          <canvas id="pipelineChart" height="120"></canvas>
-        </div>
-      </section>
-
-      <footer class="footer">
-        <small>Data is live from Google Sheets. Refresh to update.</small>
-      </footer>
-    </main>
+<header class="header">
+  <div class="brand">
+    <h1>CSC Customer Dashboard</h1>
   </div>
+
+  <div class="controls">
+    <input id="searchInput" placeholder="Search or type company..." />
+    <select id="companySelect">
+      <option value="">Select a company</option>
+    </select>
+    <button id="themeToggle">🌗</button>
+  </div>
+</header>
+
+<div class="mainContent">
+  <div id="customer"></div>
+  <div id="leadOrigin"></div>
+  <div id="owner"></div>
+
+  <h3>Progress</h3>
+  <div id="progressBadges"></div>
+
+  <h3>Documents</h3>
+  <div id="pptLink"></div>
+
+  <h3>Notes</h3>
+  <div id="notes"></div>
+</div>
+
+<script src="./app.js"></script>
 </body>
 </html>
