@@ -1,4 +1,4 @@
-const API_URL = "PASTE_YOUR_APPS_SCRIPT_WEBAPP_URL_HERE";
+const API_URL = "https://script.google.com/macros/s/AKfycbwsIP0OipyJRA6uG6dmvMO4RdiOSegyVOaIfXovR0HJpyRnlq0DmzLG1Bh0GtEishLvtA/exec";
 
 let rows = [];
 
