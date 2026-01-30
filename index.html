@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>CSC Customer Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="header">
+  <h1>Customer Dashboard</h1>
+
+  <select id="companySelect">
+    <option value="">Select a company</option>
+  </select>
+</header>
+
+<section class="cards">
+  <div class="card">
+    <label>Customer</label>
+    <div id="customer"></div>
+  </div>
+
+  <div class="card">
+    <label>Lead Origin</label>
+    <div id="leadOrigin"></div>
+  </div>
+
+  <div class="card">
+    <label>Strategic Owner</label>
+    <div id="owner"></div>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>Progress</h2>
+  <div id="progressBadges"></div>
+</section>
+
+<section class="panel">
+  <h2>Documents</h2>
+  <div id="pptLink"></div>
+</section>
+
+<section class="panel">
+  <h2>Notes</h2>
+  <p id="notes"></p>
+</section>
+
+<script src="app.js"></script>
+</body>
+</html>
