@@ -1,61 +1,84 @@
-// ====== Put your Apps Script Web App URL here ======
-const API_URL = "https://script.google.com/macros/s/AKfycbwsIP0OipyJRA6uG6dmvMO4RdiOSegyVOaIfXovR0HJpyRnlq0DmzLG1Bh0GtEishLvtA/exec";
+const API_URL = "PASTE_YOUR_APPS_SCRIPT_WEBAPP_URL_HERE";
 
 let rows = [];
 
-fetch(API_URL)
-  .then(resp => resp.json())
-  .then(data => {
-    if (!Array.isArray(data)) {
-      console.error("Unexpected API data:", data);
-      return;
-    }
-    rows = data;
+document.addEventListener("DOMContentLoaded", () => {
+  const companySelect = document.getElementById("companySelect");
+  const themeToggle = document.getElementById("themeToggle");
 
-    const select = document.getElementById("companySelect");
-    select.innerHTML = '<option value="">Select a company</option>';
+  if (!companySelect) {
+    console.error("companySelect not found in DOM");
+    return;
+  }
 
-    rows.forEach(r => {
-      if (!r["Customer"]) return;
-      const opt = document.createElement("option");
-      opt.value = r["Customer"];
-      opt.textContent = r["Customer"];
-      select.appendChild(opt);
+  // Fetch data
+  fetch(API_URL)
+    .then(r => r.json())
+    .then(data => {
+      rows = data;
+
+      data.forEach(row => {
+        if (!row["Customer"]) return;
+        const opt = document.createElement("option");
+        opt.value = row["Customer"];
+        opt.textContent = row["Customer"];
+        companySelect.appendChild(opt);
+      });
+    })
+    .catch(err => console.error("Fetch error:", err));
+
+  // Dropdown change
+  companySelect.addEventListener("change", e => {
+    const company = e.target.value;
+    if (!company) return;
+
+    const row = rows.find(r => r["Customer"] === company);
+    renderCompany(row);
+  });
+
+  // Theme toggle (safe)
+  if (themeToggle) {
+    themeToggle.addEventListener("click", () => {
+      document.body.classList.toggle("dark");
     });
-  })
-  .catch(err => console.error("Fetch failed:", err));
-
-document.getElementById("companySelect").addEventListener("change", () => {
-  const company = document.getElementById("companySelect").value;
-  const row = rows.find(r => r["Customer"] === company);
-  renderCompany(row);
+  }
 });
 
 function renderCompany(d) {
   if (!d) return;
 
-  document.getElementById("customer").textContent = d["Customer"] || "";
-  document.getElementById("leadOrigin").textContent = d["Lead Origin"] || "";
-  document.getElementById("owner").textContent = d["Strategic Owner"] || "";
-  document.getElementById("notes").textContent = d["Current Progress"] || "";
+  document.getElementById("customer").textContent =
+    "Customer: " + (d["Customer"] || "");
 
+  document.getElementById("leadOrigin").textContent =
+    "Lead Origin: " + (d["Lead Origin"] || "");
+
+  document.getElementById("owner").textContent =
+    "Strategic Owner: " + (d["Strategic Owner"] || "");
+
+  document.getElementById("notes").textContent =
+    d["Current Progress"] || "";
+
+  // Progress badges
   const progressDiv = document.getElementById("progressBadges");
   progressDiv.innerHTML = "";
+
   ["Introductory Meeting", "NDA Signed", "LOI Signed"].forEach(key => {
-    if (d[key]) {
-      const badge = document.createElement("span");
-      badge.textContent = key + ": " + d[key];
-      progressDiv.appendChild(badge);
-    }
+    if (!d[key]) return;
+    const span = document.createElement("span");
+    span.textContent = `${key}: ${d[key]}`;
+    progressDiv.appendChild(span);
   });
 
+  // PPT link
   const linkDiv = document.getElementById("pptLink");
   linkDiv.innerHTML = "";
+
   if (d["Commodities – PPT (Link)"]) {
     const a = document.createElement("a");
     a.href = d["Commodities – PPT (Link)"];
     a.target = "_blank";
-    a.textContent = "Open Document";
+    a.textContent = "View PPT";
     linkDiv.appendChild(a);
   }
 }
