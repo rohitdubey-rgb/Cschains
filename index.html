@@ -34,18 +34,32 @@
         <section class="filter-section">
             <div class="search-container">
                 <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                <input type="text" id="searchInput" placeholder="Search leads, customers, contacts...">
+                <input type="text" id="searchInput" placeholder="Search customer, contact or notes...">
             </div>
+            
             <div class="filter-row">
-                <div class="search-secondary">
-                    <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                    <input type="text" id="notesFilter" placeholder="Filter by notes content...">
-                </div>
-                <button class="pill-btn" data-filter="origin">Lead Origin</button>
-                <button class="pill-btn" data-filter="pim_cm">PIM/CM</button>
-                <button class="pill-btn" data-filter="manager">Manager</button>
-                <button class="pill-btn" data-filter="intro">Intro Meeting</button>
-                <button class="pill-btn" data-filter="loi">LOI</button>
+                <select id="originSelect" class="filter-select">
+                    <option value="all">All Origins</option>
+                    </select>
+
+                <select id="typeSelect" class="filter-select">
+                    <option value="all">All Types</option>
+                    <option value="pim">PIM</option>
+                    <option value="cm">CM</option>
+                    <option value="both">Both</option>
+                </select>
+
+                <select id="managerSelect" class="filter-select">
+                    <option value="all">All Managers</option>
+                    </select>
+
+                <select id="stageSelect" class="filter-select">
+                    <option value="all">All Stages</option>
+                    <option value="contract">Contract Signed</option>
+                    <option value="loi_signed">LOI Signed</option>
+                    <option value="loi_issued">LOI Issued</option>
+                    <option value="intro">Intro Meeting Done</option>
+                </select>
             </div>
         </section>
 
@@ -58,7 +72,7 @@
                         <span id="sortCustomer" class="sort-btn">Customer ↑↓</span>
                         <span id="sortOrigin" class="sort-btn">Origin ↑↓</span>
                         <span id="sortManager" class="sort-btn">Manager ↑↓</span>
-                        <span id="sortFollowup" class="sort-btn">Followup ↑↓</span>
+                        <span id="sortFollowup" class="sort-btn">Pipeline Score ↑↓</span>
                     </div>
                 </div>
                 <div id="leadsListContainer" class="leads-list">
