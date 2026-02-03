@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
         select.addEventListener('change', () => {
             const val = select.value;
             document.querySelectorAll('.lead-row').forEach(row => {
-                const prob = getProb(row);
+                const prob = parseInt(row.innerText.match(/Win Prob: (\d+)%/) || [0,0][1]);
                 let show = true;
                 if (val === 'p1' && prob > 35) show = false;
                 if (val === 'p2' && (prob <= 35 || prob > 70)) show = false;
@@ -27,12 +27,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 2. MAIN OBSERVER (Watches for UI changes)
+    // 2. MAIN OBSERVER
     const observer = new MutationObserver(() => {
-        // A. Color the Left List Items (Runs every time list updates)
         colorListItems();
-
-        // B. Upgrade the Detail Card (Runs when card updates)
         const card = document.querySelector('.detail-card');
         if (card && !card.classList.contains('fixed')) {
             upgradeCard(card);
@@ -40,37 +37,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    // Watch the whole body for changes (catches list updates too)
     observer.observe(document.body, { childList: true, subtree: true });
 
-    // --- FUNCTION: COLOR LEFT LIST ITEMS ---
     function colorListItems() {
-        const rows = document.querySelectorAll('.lead-row');
-        rows.forEach(row => {
-            // Check if we already colored it to avoid flicker
-            if (row.classList.contains('phase-1') || row.classList.contains('phase-2') || row.classList.contains('phase-3')) return;
-
-            const prob = getProb(row);
+        document.querySelectorAll('.lead-row').forEach(row => {
+            if (row.classList.contains('colored')) return;
+            const prob = parseInt(row.innerText.match(/Win Prob: (\d+)%/) || [0,0][1]);
+            row.classList.remove('phase-1', 'phase-2', 'phase-3');
             if (prob <= 35) row.classList.add('phase-1');
             else if (prob <= 70) row.classList.add('phase-2');
             else row.classList.add('phase-3');
+            row.classList.add('colored');
         });
     }
 
-    // --- FUNCTION: UPGRADE DETAIL CARD ---
     function upgradeCard(card) {
-        // 1. Color Code Background AND Progress Bar
+        // A. Color Code
         const scoreEl = card.querySelector('.progress-container').previousElementSibling.querySelector('strong');
         const progressBar = card.querySelector('.progress-fill');
-
         if (scoreEl) {
             const score = parseInt(scoreEl.innerText);
-            
-            // Remove old classes
             card.classList.remove('phase-1', 'phase-2', 'phase-3');
             if (progressBar) progressBar.classList.remove('phase-1', 'phase-2', 'phase-3');
 
-            // Apply new classes based on score
             if (score <= 35) {
                 card.classList.add('phase-1');
                 if (progressBar) progressBar.classList.add('phase-1');
@@ -83,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // 2. Split Layout (Left / Right)
+        // B. Split Layout
         const allTitles = Array.from(card.querySelectorAll('.section-title'));
         const notesTitle = allTitles.find(t => t.innerText.includes('NOTES'));
         const notesArea = card.querySelector('.notes-area');
@@ -98,9 +87,11 @@ document.addEventListener('DOMContentLoaded', () => {
             rightCol.appendChild(notesTitle);
             rightCol.appendChild(notesArea);
 
+            // Move everything else to Left
             const firstSectionTitle = allTitles[0]; 
             let currentNode = firstSectionTitle;
-            while (currentNode && currentNode !== splitContainer) {
+            // Stop if we hit the new split container or run out of nodes
+            while (currentNode && currentNode !== splitContainer && currentNode !== notesTitle) {
                 const next = currentNode.nextSibling;
                 leftCol.appendChild(currentNode);
                 currentNode = next;
@@ -111,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
             card.appendChild(splitContainer);
         }
 
-        // 3. Pipeline Grouping
+        // C. Pipeline Grouping
         const pipeList = card.querySelector('.pipeline-list');
         if (pipeList && !pipeList.querySelector('.phase-header')) {
             const items = Array.from(pipeList.children);
@@ -130,11 +121,5 @@ document.addEventListener('DOMContentLoaded', () => {
             addHeader('Phase 3: Execution', 'p3');
             items.filter(i => i.innerText.match(/Contract|Parts/)).forEach(i => pipeList.appendChild(i));
         }
-    }
-
-    // Helper to get probability from row text
-    function getProb(row) {
-        const match = row.innerText.match(/Win Prob: (\d+)%/);
-        return match ? parseInt(match[1]) : 0;
     }
 });
