@@ -4,7 +4,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const state = {
         allLeads: [], filteredLeads: [], selectedLeadId: null,
         dropdowns: { managers: [], strategic: [], delivery: [] },
-        // DEFAULT SORT: Win Prob (Score)
         sort: { field: 'score', direction: 'desc' }
     };
 
@@ -16,16 +15,13 @@ document.addEventListener('DOMContentLoaded', () => {
         refreshBtn: document.getElementById('refreshBtn'),
         saveBtn: document.getElementById('globalSaveBtn'),
         addLeadBtn: document.getElementById('addLeadBtn'),
-        // FILTERS
         originSelect: document.getElementById('originSelect'),
         typeSelect: document.getElementById('typeSelect'),
         managerSelect: document.getElementById('managerSelect'),
         stageSelect: document.getElementById('stageSelect'),
         phaseSelect: document.getElementById('phaseFilter'),
-        // SORT BUTTONS
         sortBtns: {
             prob: document.getElementById('sortProb'),
-            phase: document.getElementById('sortPhase'),
             name: document.getElementById('sortName')
         }
     };
@@ -33,9 +29,17 @@ document.addEventListener('DOMContentLoaded', () => {
     init();
 
     function init() {
+        createPhaseFilter();
         fetchData();
         setupEventListeners();
         setupGlobalFunctions();
+    }
+
+    function createPhaseFilter() {
+        const filterRow = document.querySelector('.filter-row');
+        if (filterRow && !document.getElementById('phaseFilter')) {
+            dom.phaseSelect = document.getElementById('phaseFilter');
+        }
     }
 
     async function fetchData() {
@@ -154,13 +158,12 @@ document.addEventListener('DOMContentLoaded', () => {
             return matchesSearch && matchesOrigin && matchesManager && matchesPhase && matchesStage && matchesType;
         });
 
-        // SORTING LOGIC
+        // SORTING
         const { field, direction } = state.sort;
         state.filteredLeads.sort((a, b) => {
             let valA, valB;
-            if (field === 'score') { valA = a.score; valB = b.score; } // Win Prob
-            else if (field === 'phase') { valA = a.score; valB = b.score; } // Phase (basically score)
-            else if (field === 'customer') { valA = a.customer.toLowerCase(); valB = b.customer.toLowerCase(); } // Name
+            if (field === 'score') { valA = a.score; valB = b.score; } 
+            else if (field === 'customer') { valA = a.customer.toLowerCase(); valB = b.customer.toLowerCase(); } 
             
             if (valA < valB) return direction === 'asc' ? -1 : 1;
             if (valA > valB) return direction === 'asc' ? 1 : -1;
@@ -211,10 +214,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const checkIcon = `<svg width="14" height="14" stroke="var(--success)" fill="none" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`;
         const xIcon = `<svg width="14" height="14" stroke="var(--text-light)" fill="none" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
         
-        const createEditable = (fieldKey, value, isDropdown, options) => {
+        // NEW CARD CREATOR
+        const createCard = (icon, label, fieldKey, value, isDropdown, options) => {
             const displayVal = value || 'Unassigned';
             const optionsStr = options ? options.join('|') : '';
-            return `<div class="info-row"><div class="info-text"><span class="info-label">${fieldKey.toUpperCase()}</span><div class="editable-field" id="field-${fieldKey}"><span class="info-value ${value ? '' : 'unassigned'}">${displayVal}</span><span class="edit-icon" onclick="window.enableEdit('${lead.id}', '${fieldKey}', '${value || ''}', ${isDropdown}, '${optionsStr}')">✎</span></div></div></div>`;
+            return `
+            <div class="team-card">
+                <div class="team-icon">${icon}</div>
+                <div class="team-info" style="flex:1">
+                    <span class="team-label">${label}</span>
+                    <div class="editable-field" id="field-${fieldKey}">
+                        <span class="team-value ${value ? '' : 'unassigned'}">${displayVal}</span>
+                        <span class="edit-icon" onclick="window.enableEdit('${lead.id}', '${fieldKey}', '${value || ''}', ${isDropdown}, '${optionsStr}')">✎</span>
+                    </div>
+                </div>
+            </div>`;
         };
 
         const createPipeRow = (label, key, val) => `
@@ -228,10 +242,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const slidesBtn = lead.slides ? `<a href="${lead.slides}" target="_blank" class="btn-slides">Slides</a>` : `<button class="btn-outline" onclick="window.editSlides('${lead.id}')">+ Slides</button>`;
         const linkedInBtn = lead.linkedin ? `<a href="${lead.linkedin}" target="_blank" class="icon-btn-link"><svg width="14" height="14" fill="#0077b5" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg></a>` : '';
 
+        // ICONS: Customer (User), Strategic (Target), Manager (Briefcase), Delivery (Truck)
+        const iconUser = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`;
+        const iconTarget = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>`;
+        const iconBriefcase = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>`;
+        const iconTruck = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>`;
+
         dom.detailsPanel.innerHTML = `
             <div class="detail-card phase-${phase}">
                 <div class="detail-header-top">
-                    <div style="display:flex; align-items:center; gap:15px;">
+                    <div style="display:flex; align-items:center; gap:20px;">
                         <div onclick="window.editLogo('${lead.id}')">${logoHtml}</div>
                         <div>
                             <h2>${lead.customer} ${linkedInBtn}</h2>
@@ -253,21 +273,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
 
                 <div class="status-toggles">
-                    <span class="status-item clickable" onclick="window.toggleTopStatus('${lead.id}', 'intro')">${lead.intro ? checkIcon : xIcon} Intro</span>
-                    <span class="status-item clickable" onclick="window.toggleTopStatus('${lead.id}', 'weekly')">${lead.weekly ? checkIcon : xIcon} Weekly</span>
+                    <span class="status-item clickable" onclick="window.toggleTopStatus('${lead.id}', 'weekly')">${lead.weekly ? checkIcon : xIcon} Weekly Calls</span>
                 </div>
 
                 <div class="details-split-view">
                     <div class="details-left">
-                        <div class="section-title">Contact & Team</div>
-                        <div class="info-grid">
-                            ${createEditable('Customer Contact', lead.contact, false)}
-                            ${createEditable('Strategic Owner', lead.strategic, true, state.dropdowns.strategic)}
-                            ${createEditable('CSC Manager', lead.manager, true, state.dropdowns.managers)}
-                            ${createEditable('CSC Delivery', lead.delivery, true, state.dropdowns.managers)}
+                        <div class="section-title">Team Assignment</div>
+                        <div class="team-grid">
+                            ${createCard(iconUser, 'Customer Contact', 'contact', lead.contact, false)}
+                            ${createCard(iconTarget, 'Strategic Owner', 'strategic', lead.strategic, true, state.dropdowns.strategic)}
+                            ${createCard(iconBriefcase, 'Manager Lead', 'manager', lead.manager, true, state.dropdowns.managers)}
+                            ${createCard(iconTruck, 'Delivery Lead', 'delivery', lead.delivery, true, state.dropdowns.managers)}
                         </div>
 
-                        <div class="section-title">Pipeline</div>
+                        <div class="section-title">Pipeline Stages</div>
                         <div class="pipeline-list">
                             <div class="phase-header p1">Phase 1: Exploration</div>
                             ${createPipeRow('PPTs Shared', 'ppts', lead.pipeline.ppts)}
@@ -302,8 +321,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const payload = { ...lead, ...lead.pipeline, action: 'update' };
         try {
             const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
-            const result = await res.json();
-            if (result.status === 'success') {
+            if ((await res.json()).status === 'success') {
                 btn.innerHTML = '✔ Saved';
                 btn.classList.add('btn-success');
                 setTimeout(() => { btn.innerHTML = 'Save Changes'; btn.classList.remove('btn-success'); }, 2000);
@@ -334,7 +352,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupGlobalFunctions() {
         dom.saveBtn.onclick = () => { if(state.selectedLeadId) saveLeadData(state.allLeads.find(l=>l.id===state.selectedLeadId)); };
         
-        // Listeners for Filters
         dom.phaseSelect.addEventListener('change', applyFiltersAndSort);
         dom.originSelect.addEventListener('change', applyFiltersAndSort);
         dom.typeSelect.addEventListener('change', applyFiltersAndSort);
@@ -342,9 +359,8 @@ document.addEventListener('DOMContentLoaded', () => {
         dom.stageSelect.addEventListener('change', applyFiltersAndSort);
         dom.searchInput.addEventListener('input', applyFiltersAndSort);
         
-        // Listeners for Sort Buttons
+        // SORT LOGIC
         dom.sortBtns.prob.addEventListener('click', () => { setSort('score', 'desc'); });
-        dom.sortBtns.phase.addEventListener('click', () => { setSort('phase', 'desc'); });
         dom.sortBtns.name.addEventListener('click', () => { setSort('customer', 'asc'); });
 
         window.togglePipeline = (id, key) => { const l = state.allLeads.find(x=>x.id===id); if(l){ l.pipeline[key]=!l.pipeline[key]; saveLeadData(l); }};
@@ -368,25 +384,17 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         window.editLogo = (id) => { const l = state.allLeads.find(x=>x.id===id); const u = prompt("Logo URL:", l.logo); if(u!==null){ l.logo=u; saveLeadData(l); }};
         window.editSlides = (id) => { const l = state.allLeads.find(x=>x.id===id); const u = prompt("Slides URL:", l.slides); if(u!==null){ l.slides=u; saveLeadData(l); }};
-        window.editLinkedIn = (id) => { const l = state.allLeads.find(x=>x.id===id); const u = prompt("LinkedIn URL:", l.linkedin); if(u!==null){ l.linkedin=u; saveLeadData(l); }};
     }
     
     function setSort(field, dir) {
-        state.sort.field = field;
-        state.sort.direction = dir;
-        
-        // Update UI logic
+        state.sort.field = field; state.sort.direction = dir;
         document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active-sort'));
         if(field === 'score') dom.sortBtns.prob.classList.add('active-sort');
-        if(field === 'phase') dom.sortBtns.phase.classList.add('active-sort');
         if(field === 'customer') dom.sortBtns.name.classList.add('active-sort');
-        
         applyFiltersAndSort();
     }
     
-    function setupEventListeners() {
-        dom.refreshBtn.addEventListener('click', fetchData);
-    }
+    function setupEventListeners() { dom.refreshBtn.addEventListener('click', fetchData); }
     
     function populateFilters() {
         const mgrs = state.dropdowns.managers;
