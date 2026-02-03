@@ -1,81 +1,47 @@
-/* --- 1. Background Colors (High Specificity) --- */
-/* We target the header and force the background color */
-.detail-card.phase-1 .detail-header-top { 
-    background: linear-gradient(to bottom, #fff1f2, #fff) !important; 
-    border-top: 4px solid #f43f5e;
+/* --- 1. LEFT LIST ROW COLORING --- */
+/* Phase 1: Exploration (Red) */
+.lead-row.phase-1 {
+    border-left: 4px solid #f43f5e !important;
+    background: linear-gradient(to right, #fff1f2, #fff) !important;
 }
-.detail-card.phase-2 .detail-header-top { 
-    background: linear-gradient(to bottom, #fffbeb, #fff) !important; 
-    border-top: 4px solid #f59e0b;
-}
-.detail-card.phase-3 .detail-header-top { 
-    background: linear-gradient(to bottom, #f0fdf4, #fff) !important; 
-    border-top: 4px solid #22c55e;
-}
+.lead-row.phase-1:hover { background: #ffe4e6 !important; }
 
-/* Ensure the header padding looks good with the color */
-.detail-header-top {
-    margin: -20px -20px 20px -20px !important;
-    padding: 20px !important;
-    border-radius: 12px 12px 0 0;
+/* Phase 2: Validation (Yellow) */
+.lead-row.phase-2 {
+    border-left: 4px solid #f59e0b !important;
+    background: linear-gradient(to right, #fffbeb, #fff) !important;
 }
+.lead-row.phase-2:hover { background: #fef3c7 !important; }
 
-/* --- 2. Split Layout (The Fix for "Messed Up Right Side") --- */
-.detail-card {
-    max-width: 1400px !important; /* Make card wider */
+/* Phase 3: Execution (Green) */
+.lead-row.phase-3 {
+    border-left: 4px solid #22c55e !important;
+    background: linear-gradient(to right, #f0fdf4, #fff) !important;
 }
+.lead-row.phase-3:hover { background: #dcfce7 !important; }
 
-/* The container that holds Left (Info) and Right (Notes) */
-.details-split-view {
-    display: flex;
-    flex-direction: row; /* Force side-by-side */
-    gap: 30px;
-    width: 100%;
-    align-items: stretch;
-}
 
-.details-left {
-    flex: 1;
-    min-width: 400px;
-}
+/* --- 2. PROGRESS BAR COLORING --- */
+/* We use !important to override the default green */
+.progress-fill.phase-1 { background-color: #f43f5e !important; } /* Red */
+.progress-fill.phase-2 { background-color: #f59e0b !important; } /* Yellow */
+.progress-fill.phase-3 { background-color: #22c55e !important; } /* Green */
 
-.details-right {
-    flex: 1;
-    background-color: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-}
 
-/* Make the textarea huge to fill the right side */
-.details-right textarea {
-    flex-grow: 1;
-    min-height: 400px;
-    width: 100%;
-    border: 1px solid #cbd5e1;
-    padding: 15px;
-    font-size: 1rem;
-    resize: none;
-}
+/* --- Previous Styles (Keep these) --- */
+.detail-card.phase-1 .detail-header-top { background: linear-gradient(to bottom, #fff1f2, #fff) !important; border-top: 4px solid #f43f5e; }
+.detail-card.phase-2 .detail-header-top { background: linear-gradient(to bottom, #fffbeb, #fff) !important; border-top: 4px solid #f59e0b; }
+.detail-card.phase-3 .detail-header-top { background: linear-gradient(to bottom, #f0fdf4, #fff) !important; border-top: 4px solid #22c55e; }
 
-/* --- 3. Pipeline Phase Headers --- */
-.phase-header {
-    font-size: 0.75rem;
-    font-weight: 800;
-    color: #475569;
-    padding: 8px 12px;
-    margin-top: 15px;
-    margin-bottom: 5px;
-    border-radius: 6px;
-    background: #f1f5f9;
-    border-left-width: 4px;
-    border-left-style: solid;
-}
+.detail-header-top { margin: -20px -20px 20px -20px !important; padding: 20px !important; border-radius: 12px 12px 0 0; }
+.detail-card { max-width: 1400px !important; }
+.details-split-view { display: flex; flex-direction: row; gap: 30px; width: 100%; align-items: stretch; }
+.details-left { flex: 1; min-width: 400px; }
+.details-right { flex: 1; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; }
+.details-right textarea { flex-grow: 1; min-height: 400px; width: 100%; border: 1px solid #cbd5e1; padding: 15px; font-size: 1rem; resize: none; }
+
+.phase-header { font-size: 0.75rem; font-weight: 800; color: #475569; padding: 8px 12px; margin-top: 15px; margin-bottom: 5px; border-radius: 6px; background: #f1f5f9; border-left-width: 4px; border-left-style: solid; }
 .phase-header.p1 { border-color: #f43f5e; background: #fff1f2; color: #be123c; }
 .phase-header.p2 { border-color: #f59e0b; background: #fffbeb; color: #b45309; }
 .phase-header.p3 { border-color: #22c55e; background: #f0fdf4; color: #15803d; }
-
-/* Filter Dropdown Style */
 #phaseFilter { border: 2px solid var(--primary); font-weight: 600; }
