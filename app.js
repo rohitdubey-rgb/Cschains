@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const state = {
         allLeads: [], filteredLeads: [], selectedLeadId: null,
         dropdowns: { managers: [], strategic: [], delivery: [] },
+        // DEFAULT SORT: Win Prob (Score)
         sort: { field: 'score', direction: 'desc' }
     };
 
@@ -15,32 +16,26 @@ document.addEventListener('DOMContentLoaded', () => {
         refreshBtn: document.getElementById('refreshBtn'),
         saveBtn: document.getElementById('globalSaveBtn'),
         addLeadBtn: document.getElementById('addLeadBtn'),
+        // FILTERS
         originSelect: document.getElementById('originSelect'),
         typeSelect: document.getElementById('typeSelect'),
         managerSelect: document.getElementById('managerSelect'),
         stageSelect: document.getElementById('stageSelect'),
-        phaseSelect: null,
-        sortBtns: { customer: document.getElementById('sortCustomer'), manager: document.getElementById('sortManager'), followup: document.getElementById('sortFollowup') }
+        phaseSelect: document.getElementById('phaseFilter'),
+        // SORT BUTTONS
+        sortBtns: {
+            prob: document.getElementById('sortProb'),
+            phase: document.getElementById('sortPhase'),
+            name: document.getElementById('sortName')
+        }
     };
 
     init();
 
     function init() {
-        createPhaseFilter();
         fetchData();
         setupEventListeners();
         setupGlobalFunctions();
-    }
-
-    function createPhaseFilter() {
-        const filterRow = document.querySelector('.filter-row');
-        if (filterRow && !document.getElementById('phaseFilter')) {
-            const select = document.createElement('select');
-            select.id = 'phaseFilter'; select.className = 'filter-select';
-            select.innerHTML = `<option value="all">All Phases</option><option value="p1">Phase 1: Exploration</option><option value="p2">Phase 2: Validation</option><option value="p3">Phase 3: Execution</option>`;
-            filterRow.insertBefore(select, filterRow.firstChild);
-            dom.phaseSelect = select;
-        }
     }
 
     async function fetchData() {
@@ -75,6 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (lead.pipeline.parts) score += 10;
         lead.score = score;
         lead.progress = Math.min(100, Math.round((score / 160) * 100));
+        lead.phase = getPhase(lead.score);
     }
 
     function getPhase(score) {
@@ -132,26 +128,40 @@ document.addEventListener('DOMContentLoaded', () => {
         const query = dom.searchInput.value.toLowerCase();
         const originVal = dom.originSelect.value;
         const managerVal = dom.managerSelect.value;
-        const phaseVal = dom.phaseSelect ? dom.phaseSelect.value : 'all';
+        const phaseVal = dom.phaseSelect.value;
+        const typeVal = dom.typeSelect.value;
+        const stageVal = dom.stageSelect.value;
 
         state.filteredLeads = state.allLeads.filter(lead => {
             const matchesSearch = lead.customer.toLowerCase().includes(query) || lead.contact.toLowerCase().includes(query);
             const matchesOrigin = originVal === 'all' || lead.origin === originVal;
             const matchesManager = managerVal === 'all' || lead.manager === managerVal;
+            const matchesType = typeVal === 'all' || lead.type === typeVal || lead.type === 'both';
+            
             let matchesPhase = true;
             if (phaseVal !== 'all') {
-                const phase = getPhase(lead.score);
-                if (phaseVal === 'p1' && phase !== 1) matchesPhase = false;
-                if (phaseVal === 'p2' && phase !== 2) matchesPhase = false;
-                if (phaseVal === 'p3' && phase !== 3) matchesPhase = false;
+                if (phaseVal === 'p1' && lead.phase !== 1) matchesPhase = false;
+                if (phaseVal === 'p2' && lead.phase !== 2) matchesPhase = false;
+                if (phaseVal === 'p3' && lead.phase !== 3) matchesPhase = false;
             }
-            return matchesSearch && matchesOrigin && matchesManager && matchesPhase;
+
+            let matchesStage = true;
+            if (stageVal === 'contract' && !lead.pipeline.contract) matchesStage = false;
+            if (stageVal === 'loi_signed' && !lead.pipeline.loi_signed) matchesStage = false;
+            if (stageVal === 'loi_issued' && !lead.pipeline.loi_issued) matchesStage = false;
+            if (stageVal === 'intro' && !lead.intro) matchesStage = false;
+
+            return matchesSearch && matchesOrigin && matchesManager && matchesPhase && matchesStage && matchesType;
         });
 
+        // SORTING LOGIC
         const { field, direction } = state.sort;
         state.filteredLeads.sort((a, b) => {
-            let valA = field === 'score' ? a.score : a[field].toLowerCase();
-            let valB = field === 'score' ? b.score : b[field].toLowerCase();
+            let valA, valB;
+            if (field === 'score') { valA = a.score; valB = b.score; } // Win Prob
+            else if (field === 'phase') { valA = a.score; valB = b.score; } // Phase (basically score)
+            else if (field === 'customer') { valA = a.customer.toLowerCase(); valB = b.customer.toLowerCase(); } // Name
+            
             if (valA < valB) return direction === 'asc' ? -1 : 1;
             if (valA > valB) return direction === 'asc' ? 1 : -1;
             return 0;
@@ -166,13 +176,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         state.filteredLeads.forEach(lead => {
             const row = document.createElement('div');
-            const phase = getPhase(lead.score);
+            const phase = lead.phase;
             row.className = `lead-row phase-${phase} ${state.selectedLeadId === lead.id ? 'active' : ''}`;
             row.onclick = () => selectLead(lead.id);
 
             const tagsHtml = lead.tags.map(t => `<span class="tag tag-${t.type}">${t.text}</span>`).join('');
             
-            // FIX: Correct Status Logic
             let statusHtml = '';
             if (lead.weekly) statusHtml = `<span class="dot dot-green"></span> Weekly`;
             else if (lead.intro) statusHtml = `<span class="dot dot-green"></span> Intro`;
@@ -197,7 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderDetails(lead) {
         if (!lead) return;
-        const phase = getPhase(lead.score);
+        const phase = lead.phase;
         const tagsHtml = lead.tags.map(t => `<span class="tag tag-${t.type}">${t.text}</span>`).join('');
         const checkIcon = `<svg width="14" height="14" stroke="var(--success)" fill="none" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`;
         const xIcon = `<svg width="14" height="14" stroke="var(--text-light)" fill="none" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
@@ -284,7 +293,6 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
-    // --- API & GLOBAL FUNCS ---
     async function saveLeadData(lead) {
         const btn = dom.saveBtn;
         btn.innerHTML = 'Saving...';
@@ -325,11 +333,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setupGlobalFunctions() {
         dom.saveBtn.onclick = () => { if(state.selectedLeadId) saveLeadData(state.allLeads.find(l=>l.id===state.selectedLeadId)); };
-        dom.phaseSelect.addEventListener('change', applyFiltersAndSort);
-        dom.searchInput.addEventListener('input', applyFiltersAndSort);
-        dom.originSelect.addEventListener('change', applyFiltersAndSort);
-        dom.managerSelect.addEventListener('change', applyFiltersAndSort);
         
+        // Listeners for Filters
+        dom.phaseSelect.addEventListener('change', applyFiltersAndSort);
+        dom.originSelect.addEventListener('change', applyFiltersAndSort);
+        dom.typeSelect.addEventListener('change', applyFiltersAndSort);
+        dom.managerSelect.addEventListener('change', applyFiltersAndSort);
+        dom.stageSelect.addEventListener('change', applyFiltersAndSort);
+        dom.searchInput.addEventListener('input', applyFiltersAndSort);
+        
+        // Listeners for Sort Buttons
+        dom.sortBtns.prob.addEventListener('click', () => { setSort('score', 'desc'); });
+        dom.sortBtns.phase.addEventListener('click', () => { setSort('phase', 'desc'); });
+        dom.sortBtns.name.addEventListener('click', () => { setSort('customer', 'asc'); });
+
         window.togglePipeline = (id, key) => { const l = state.allLeads.find(x=>x.id===id); if(l){ l.pipeline[key]=!l.pipeline[key]; saveLeadData(l); }};
         window.toggleTopStatus = (id, key) => { const l = state.allLeads.find(x=>x.id===id); if(l){ l[key]=!l[key]; saveLeadData(l); }};
         window.saveNotes = () => { const l = state.allLeads.find(x=>x.id===state.selectedLeadId); if(l){ l.notes = document.getElementById('notesArea').value; saveLeadData(l); }};
@@ -351,15 +368,24 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         window.editLogo = (id) => { const l = state.allLeads.find(x=>x.id===id); const u = prompt("Logo URL:", l.logo); if(u!==null){ l.logo=u; saveLeadData(l); }};
         window.editSlides = (id) => { const l = state.allLeads.find(x=>x.id===id); const u = prompt("Slides URL:", l.slides); if(u!==null){ l.slides=u; saveLeadData(l); }};
+        window.editLinkedIn = (id) => { const l = state.allLeads.find(x=>x.id===id); const u = prompt("LinkedIn URL:", l.linkedin); if(u!==null){ l.linkedin=u; saveLeadData(l); }};
+    }
+    
+    function setSort(field, dir) {
+        state.sort.field = field;
+        state.sort.direction = dir;
+        
+        // Update UI logic
+        document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active-sort'));
+        if(field === 'score') dom.sortBtns.prob.classList.add('active-sort');
+        if(field === 'phase') dom.sortBtns.phase.classList.add('active-sort');
+        if(field === 'customer') dom.sortBtns.name.classList.add('active-sort');
+        
+        applyFiltersAndSort();
     }
     
     function setupEventListeners() {
         dom.refreshBtn.addEventListener('click', fetchData);
-        Object.keys(dom.sortBtns).forEach(k => dom.sortBtns[k].addEventListener('click', () => {
-             state.sort.field = (k==='followup'?'score':k); 
-             state.sort.direction = state.sort.direction==='asc'?'desc':'asc'; 
-             applyFiltersAndSort(); 
-        }));
     }
     
     function populateFilters() {
