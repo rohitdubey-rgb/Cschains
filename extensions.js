@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     
-    // 1. INJECT FILTER (Only runs once)
+    // 1. INJECT FILTER
     const filterRow = document.querySelector('.filter-row');
     if (filterRow && !document.getElementById('phaseFilter')) {
         const select = document.createElement('select');
@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
         select.addEventListener('change', () => {
             const val = select.value;
             document.querySelectorAll('.lead-row').forEach(row => {
-                const prob = parseInt(row.innerText.match(/Win Prob: (\d+)%/) || [0,0][1]);
+                const prob = getProb(row);
                 let show = true;
                 if (val === 'p1' && prob > 35) show = false;
                 if (val === 'p2' && (prob <= 35 || prob > 70)) show = false;
@@ -27,8 +27,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 2. WATCH FOR UPDATES
+    // 2. MAIN OBSERVER (Watches for UI changes)
     const observer = new MutationObserver(() => {
+        // A. Color the Left List Items (Runs every time list updates)
+        colorListItems();
+
+        // B. Upgrade the Detail Card (Runs when card updates)
         const card = document.querySelector('.detail-card');
         if (card && !card.classList.contains('fixed')) {
             upgradeCard(card);
@@ -36,53 +40,66 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    const panel = document.getElementById('detailsPanel');
-    if (panel) observer.observe(panel, { childList: true, subtree: true });
+    // Watch the whole body for changes (catches list updates too)
+    observer.observe(document.body, { childList: true, subtree: true });
 
+    // --- FUNCTION: COLOR LEFT LIST ITEMS ---
+    function colorListItems() {
+        const rows = document.querySelectorAll('.lead-row');
+        rows.forEach(row => {
+            // Check if we already colored it to avoid flicker
+            if (row.classList.contains('phase-1') || row.classList.contains('phase-2') || row.classList.contains('phase-3')) return;
+
+            const prob = getProb(row);
+            if (prob <= 35) row.classList.add('phase-1');
+            else if (prob <= 70) row.classList.add('phase-2');
+            else row.classList.add('phase-3');
+        });
+    }
+
+    // --- FUNCTION: UPGRADE DETAIL CARD ---
     function upgradeCard(card) {
-        // --- A. COLOR CODING ---
-        // Find the progress percentage text
+        // 1. Color Code Background AND Progress Bar
         const scoreEl = card.querySelector('.progress-container').previousElementSibling.querySelector('strong');
+        const progressBar = card.querySelector('.progress-fill');
+
         if (scoreEl) {
             const score = parseInt(scoreEl.innerText);
+            
+            // Remove old classes
             card.classList.remove('phase-1', 'phase-2', 'phase-3');
-            if (score <= 35) card.classList.add('phase-1');
-            else if (score <= 70) card.classList.add('phase-2');
-            else card.classList.add('phase-3');
+            if (progressBar) progressBar.classList.remove('phase-1', 'phase-2', 'phase-3');
+
+            // Apply new classes based on score
+            if (score <= 35) {
+                card.classList.add('phase-1');
+                if (progressBar) progressBar.classList.add('phase-1');
+            } else if (score <= 70) {
+                card.classList.add('phase-2');
+                if (progressBar) progressBar.classList.add('phase-2');
+            } else {
+                card.classList.add('phase-3');
+                if (progressBar) progressBar.classList.add('phase-3');
+            }
         }
 
-        // --- B. LAYOUT RE-ARRANGEMENT ---
-        // We look for the "NOTES" title.
+        // 2. Split Layout (Left / Right)
         const allTitles = Array.from(card.querySelectorAll('.section-title'));
         const notesTitle = allTitles.find(t => t.innerText.includes('NOTES'));
         const notesArea = card.querySelector('.notes-area');
 
         if (notesTitle && notesArea) {
-            // Rename Title
             notesTitle.innerText = "NEXT STEPS & NOTES";
-
-            // Create Containers
             const splitContainer = document.createElement('div');
             splitContainer.className = 'details-split-view';
-            
-            const leftCol = document.createElement('div');
-            leftCol.className = 'details-left';
-            
-            const rightCol = document.createElement('div');
-            rightCol.className = 'details-right';
+            const leftCol = document.createElement('div'); leftCol.className = 'details-left';
+            const rightCol = document.createElement('div'); rightCol.className = 'details-right';
 
-            // MOVE NOTES TO RIGHT
             rightCol.appendChild(notesTitle);
             rightCol.appendChild(notesArea);
 
-            // MOVE OTHERS TO LEFT
-            // We move everything that is NOT the header, progress bar, or toggles
-            // The "cut off" point is usually the first Section Title (Contact Info)
-            
-            const firstSectionTitle = allTitles[0]; // Usually "CONTACT INFORMATION"
+            const firstSectionTitle = allTitles[0]; 
             let currentNode = firstSectionTitle;
-            
-            // Move elements starting from Contact Info down to the grid
             while (currentNode && currentNode !== splitContainer) {
                 const next = currentNode.nextSibling;
                 leftCol.appendChild(currentNode);
@@ -94,17 +111,14 @@ document.addEventListener('DOMContentLoaded', () => {
             card.appendChild(splitContainer);
         }
 
-        // --- C. PIPELINE GROUPING ---
+        // 3. Pipeline Grouping
         const pipeList = card.querySelector('.pipeline-list');
         if (pipeList && !pipeList.querySelector('.phase-header')) {
             const items = Array.from(pipeList.children);
-            pipeList.innerHTML = ''; // Clear
+            pipeList.innerHTML = ''; 
 
             const addHeader = (txt, cls) => {
-                const h = document.createElement('div');
-                h.className = `phase-header ${cls}`;
-                h.innerText = txt;
-                pipeList.appendChild(h);
+                const h = document.createElement('div'); h.className = `phase-header ${cls}`; h.innerText = txt; pipeList.appendChild(h);
             };
 
             addHeader('Phase 1: Exploration', 'p1');
@@ -116,5 +130,11 @@ document.addEventListener('DOMContentLoaded', () => {
             addHeader('Phase 3: Execution', 'p3');
             items.filter(i => i.innerText.match(/Contract|Parts/)).forEach(i => pipeList.appendChild(i));
         }
+    }
+
+    // Helper to get probability from row text
+    function getProb(row) {
+        const match = row.innerText.match(/Win Prob: (\d+)%/);
+        return match ? parseInt(match[1]) : 0;
     }
 });
