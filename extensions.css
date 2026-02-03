@@ -1,94 +1,47 @@
-/* 1. Make the Main Card Wider */
-.detail-card {
-    max-width: 1200px !important; /* Override the default 500px */
-    display: flex;
-    flex-direction: column;
-}
-
-/* 2. Create a Grid for the bottom content */
-.details-grid-container {
-    display: flex;
-    gap: 30px;
-    margin-top: 20px;
-    border-top: 1px solid var(--border-color);
-    padding-top: 20px;
-}
-
-/* 3. Left Column (Contact, Team, Pipeline) */
-.details-left-col {
-    flex: 1;
-    min-width: 350px;
-}
-
-/* 4. Right Column (Next Steps) */
-.details-right-col {
-    flex: 1.2; /* Give it slightly more space */
-    background-color: #f8fafc;
-    border-radius: 12px;
-    padding: 20px;
-    border: 1px solid var(--border-color);
-    display: flex;
-    flex-direction: column;
-}
-
-/* 5. Style the Next Steps Area */
-.details-right-col .section-title {
-    color: var(--primary);
-    font-size: 0.85rem;
-    border-bottom: 2px solid #e2e8f0;
-    padding-bottom: 10px;
-    margin-bottom: 15px;
-}
-
-/* Make the textarea tall and look like a document */
-.details-right-col textarea {
-    flex: 1; /* Fill remaining height */
-    min-height: 400px !important;
-    border: 1px solid #cbd5e1 !important;
-    background: white;
-    font-size: 1rem !important;
-    line-height: 1.5;
-    padding: 15px !important;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
-}
-
-/* Hide the Save Button inside the text area container (we will move it) */
-.details-right-col button {
-    margin-top: 15px !important;
-    background-color: var(--primary);
-    color: white;
-    border: none;
-}
-
-
-/* --- Phase Headers in Pipeline --- */
+/* --- Phase Headers in Pipeline List --- */
 .phase-header {
-    font-size: 0.75rem;
-    font-weight: 700;
+    font-size: 0.7rem;
+    font-weight: 800;
     color: #64748b;
-    background: #f1f5f9;
-    padding: 6px 10px;
+    background: #f8fafc;
+    padding: 8px 12px;
     margin-top: 15px;
     margin-bottom: 5px;
     border-radius: 6px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     border-left: 4px solid #cbd5e1;
+    display: flex;
+    align-items: center;
 }
 
-.phase-header.p1 { border-color: #fca5a5; color: #b91c1c; background: #fef2f2; } /* Red */
-.phase-header.p2 { border-color: #fcd34d; color: #b45309; background: #fffbeb; } /* Yellow */
-.phase-header.p3 { border-color: #4ade80; color: #15803d; background: #f0fdf4; } /* Green */
+/* Phase Specific Colors */
+.phase-header.p1 { border-color: #fca5a5; color: #b91c1c; background: #fef2f2; } /* Red - Early */
+.phase-header.p2 { border-color: #fcd34d; color: #b45309; background: #fffbeb; } /* Yellow - Mid */
+.phase-header.p3 { border-color: #4ade80; color: #15803d; background: #f0fdf4; } /* Green - Late */
 
-/* --- Card Background Colors --- */
-/* We use !important to override the default white background */
-.detail-card.bg-phase-1 .detail-header-top { background: linear-gradient(to bottom, #fff1f2, #ffffff); padding: 10px; margin: -20px -20px 15px -20px; border-radius: 12px 12px 0 0; }
-.detail-card.bg-phase-2 .detail-header-top { background: linear-gradient(to bottom, #fffbeb, #ffffff); padding: 10px; margin: -20px -20px 15px -20px; border-radius: 12px 12px 0 0; }
-.detail-card.bg-phase-3 .detail-header-top { background: linear-gradient(to bottom, #f0fdf4, #ffffff); padding: 10px; margin: -20px -20px 15px -20px; border-radius: 12px 12px 0 0; }
+/* --- Dynamic Background for Customer Header --- */
+/* We target the header container inside the detail card */
+.detail-card.phase-1 .detail-header-top { 
+    background: linear-gradient(to bottom, #fff1f2, #ffffff); 
+    border-bottom: 1px solid #fee2e2;
+    padding: 15px; margin: -20px -20px 15px -20px; border-radius: 12px 12px 0 0; 
+}
 
-/* --- New Filter Dropdown Style --- */
+.detail-card.phase-2 .detail-header-top { 
+    background: linear-gradient(to bottom, #fffbeb, #ffffff); 
+    border-bottom: 1px solid #fef3c7;
+    padding: 15px; margin: -20px -20px 15px -20px; border-radius: 12px 12px 0 0; 
+}
+
+.detail-card.phase-3 .detail-header-top { 
+    background: linear-gradient(to bottom, #f0fdf4, #ffffff); 
+    border-bottom: 1px solid #dcfce7;
+    padding: 15px; margin: -20px -20px 15px -20px; border-radius: 12px 12px 0 0; 
+}
+
+/* --- New Filter Dropdown --- */
 #phaseFilter {
-    background-color: #f8fafc;
     border: 2px solid #e2e8f0;
     font-weight: 600;
     color: var(--primary);
