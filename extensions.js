@@ -1,35 +1,34 @@
 document.addEventListener('DOMContentLoaded', () => {
     
-    // Watch for changes in the Details Panel (e.g. when you click a lead)
+    // Watch for changes in the Details Panel
     const observer = new MutationObserver((mutations) => {
         const card = document.querySelector('.detail-card');
         
         // If card exists and we haven't fixed the layout yet
         if (card && !card.classList.contains('layout-fixed')) {
             rearrangeLayout(card);
-            card.classList.add('layout-fixed'); // Mark as done so we don't loop
+            card.classList.add('layout-fixed'); 
         }
     });
 
-    // Start watching the panel
     const panel = document.getElementById('detailsPanel');
     if (panel) {
         observer.observe(panel, { childList: true, subtree: true });
     }
 
     function rearrangeLayout(card) {
-        // 1. Identify Elements
-        // We look for section titles to identify where sections start
+        // 1. Find the "Next Steps / Notes" section to move to the right
         const titles = Array.from(card.querySelectorAll('.section-title'));
         const notesTitle = titles.find(el => el.textContent.includes('NOTES'));
         const notesArea = card.querySelector('.notes-area');
 
+        // Safety check: if standard elements aren't found, stop
         if (!notesTitle || !notesArea) return;
 
-        // 2. Rename "NOTES" to "NEXT STEPS"
+        // 2. Rename Notes Title
         notesTitle.innerText = "NEXT STEPS / PROGRESS NOTES";
 
-        // 3. Create the New Containers
+        // 3. Create the Main Layout Grid
         const gridContainer = document.createElement('div');
         gridContainer.className = 'details-grid-container';
 
@@ -39,33 +38,43 @@ document.addEventListener('DOMContentLoaded', () => {
         const rightCol = document.createElement('div');
         rightCol.className = 'details-right-col';
 
-        // 4. Move "Notes" stuff to Right Column
+        // 4. PREPARE RIGHT COLUMN (Notes)
+        // Move the Notes Title and Text Area into the Right Column
         rightCol.appendChild(notesTitle);
         rightCol.appendChild(notesArea);
 
-        // 5. Move everything else (Contact, Team, Pipeline) to Left Column
-        // We start grabbing elements from after the "Status Toggles"
-        // The structure usually is: Header -> Progress -> Toggles -> Contact -> Team -> Pipeline -> Notes
+        // 5. PREPARE LEFT COLUMN (Everything else)
+        // We need to move the remaining elements IN ORDER so headers stay above their data.
         
-        // Strategy: Anything currently left in the card that isn't the Header/Progress/Toggles goes to Left Col
-        // We identify the "cut off" point.
-        // Let's assume Contact, Team, Pipeline are the remaining blocks.
+        // Strategy: We know the structure from app.js is roughly:
+        // [Header..] [Progress..] [Toggles..] [Title:Contact] [Grid:Contact] [Title:Team] [Grid:Team] [Title:Pipeline] [List:Pipeline]
         
-        const infoGrid = card.querySelectorAll('.info-grid'); // Contact & Team
-        const pipeList = card.querySelector('.pipeline-list'); // Pipeline
-        
-        // Find titles for Contact, Team, Pipeline
-        const remainingTitles = Array.from(card.querySelectorAll('.section-title')); 
+        // We want to leave the Header/Progress/Toggles at the very top (outside our columns).
+        // We want to move Contact, Team, and Pipeline into Left Col.
 
-        remainingTitles.forEach(title => leftCol.appendChild(title));
-        infoGrid.forEach(grid => leftCol.appendChild(grid));
-        if (pipeList) leftCol.appendChild(pipeList);
+        // Let's find the specific blocks by their content/class to be safe
+        const contactTitle = titles.find(el => el.textContent.includes('CONTACT'));
+        const teamTitle = titles.find(el => el.textContent.includes('TEAM'));
+        const pipelineTitle = titles.find(el => el.textContent.includes('PIPELINE'));
+        
+        const infoGrids = card.querySelectorAll('.info-grid');
+        const pipelineList = card.querySelector('.pipeline-list');
 
-        // 6. Assemble
+        // Append in the correct visual order
+        if (contactTitle) leftCol.appendChild(contactTitle);
+        if (infoGrids[0]) leftCol.appendChild(infoGrids[0]); // Contact Grid
+
+        if (teamTitle) leftCol.appendChild(teamTitle);
+        if (infoGrids[1]) leftCol.appendChild(infoGrids[1]); // Team Grid
+
+        if (pipelineTitle) leftCol.appendChild(pipelineTitle);
+        if (pipelineList) leftCol.appendChild(pipelineList);
+
+        // 6. Final Assemble
         gridContainer.appendChild(leftCol);
         gridContainer.appendChild(rightCol);
         
-        // Append the new grid to the main card
+        // Append the whole grid to the card
         card.appendChild(gridContainer);
     }
 });
