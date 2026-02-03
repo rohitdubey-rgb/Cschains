@@ -29,19 +29,30 @@
                 <input type="text" id="searchInput" placeholder="Search...">
             </div>
             <div class="filter-row">
-                <select id="originSelect" class="filter-select"><option value="all">All Origins</option></select>
+                <select id="phaseFilter" class="filter-select">
+                    <option value="all">All Phases</option>
+                    <option value="p1">Phase 1: Exploration</option>
+                    <option value="p2">Phase 2: Validation</option>
+                    <option value="p3">Phase 3: Execution</option>
+                </select>
+
+                <select id="originSelect" class="filter-select"><option value="all">Origin</option></select>
+                
                 <select id="typeSelect" class="filter-select">
-                    <option value="all">All Types</option>
+                    <option value="all">Type</option>
                     <option value="pim">PIM</option>
                     <option value="cm">CM</option>
                     <option value="both">Both</option>
                 </select>
-                <select id="managerSelect" class="filter-select"><option value="all">All Managers</option></select>
+                
+                <select id="managerSelect" class="filter-select"><option value="all">Manager</option></select>
+                
                 <select id="stageSelect" class="filter-select">
-                    <option value="all">All Stages</option>
+                    <option value="all">Pipeline Stage</option>
                     <option value="contract">Contract Signed</option>
                     <option value="loi_signed">LOI Signed</option>
                     <option value="loi_issued">LOI Issued</option>
+                    <option value="intro">Intro Meeting</option>
                 </select>
             </div>
         </section>
@@ -51,9 +62,10 @@
                 <div class="list-header">
                     <h3><span id="listCount">0</span> Leads</h3>
                     <div class="list-sort">
-                        <span id="sortCustomer" class="sort-btn">Customer</span>
-                        <span id="sortManager" class="sort-btn">Manager</span>
-                        <span id="sortFollowup" class="sort-btn">Score</span>
+                        <span style="color:#9ca3af; margin-right:5px;">Sort by:</span>
+                        <span id="sortProb" class="sort-btn active-sort">Win Probability</span>
+                        <span id="sortPhase" class="sort-btn">Phase</span>
+                        <span id="sortName" class="sort-btn">Name</span>
                     </div>
                 </div>
                 <div id="leadsListContainer" class="leads-list">
