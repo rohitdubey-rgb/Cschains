@@ -122,7 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeStr.includes('both')) lead.tags.push({ text: 'BOTH', type: 'both' });
         else if (typeStr.includes('pim')) lead.tags.push({ text: 'PIM', type: 'pim' });
         else if (typeStr.includes('cm')) lead.tags.push({ text: 'CM', type: 'cm' });
-        if (lead.pipeline.loi_issued) lead.tags.push({ text: 'LOI Issued', type: 'loi' });
+        // Removed LOI Tag logic as requested
 
         recalculateScore(lead);
         return lead;
@@ -158,13 +158,11 @@ document.addEventListener('DOMContentLoaded', () => {
             return matchesSearch && matchesOrigin && matchesManager && matchesPhase && matchesStage && matchesType;
         });
 
-        // SORTING
         const { field, direction } = state.sort;
         state.filteredLeads.sort((a, b) => {
             let valA, valB;
             if (field === 'score') { valA = a.score; valB = b.score; } 
             else if (field === 'customer') { valA = a.customer.toLowerCase(); valB = b.customer.toLowerCase(); } 
-            
             if (valA < valB) return direction === 'asc' ? -1 : 1;
             if (valA > valB) return direction === 'asc' ? 1 : -1;
             return 0;
@@ -185,11 +183,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const tagsHtml = lead.tags.map(t => `<span class="tag tag-${t.type}">${t.text}</span>`).join('');
             
-            let statusHtml = '';
-            if (lead.weekly) statusHtml = `<span class="dot dot-green"></span> Weekly`;
-            else if (lead.intro) statusHtml = `<span class="dot dot-green"></span> Intro`;
-            else statusHtml = `<span class="dot dot-gray"></span> Prospect`;
-
             row.innerHTML = `
                 <div class="lead-icon-col"><div class="icon-circle">📄</div></div>
                 <div class="lead-content-col">
@@ -197,7 +190,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="lead-notes">${lead.notes}</div>
                 </div>
                 <div class="lead-meta-col">
-                    <div class="status-indicators">${statusHtml}</div>
                     <div style="font-size:0.65rem; color:#9ca3af">Win Prob: ${lead.progress}%</div>
                 </div>
             `;
@@ -214,15 +206,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const checkIcon = `<svg width="14" height="14" stroke="var(--success)" fill="none" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`;
         const xIcon = `<svg width="14" height="14" stroke="var(--text-light)" fill="none" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
         
-        // NEW CARD CREATOR
-        const createCard = (icon, label, fieldKey, value, isDropdown, options) => {
+        // NEW CARD CREATOR WITH LINKEDIN
+        const createCard = (icon, label, fieldKey, value, isDropdown, options, extra = '') => {
             const displayVal = value || 'Unassigned';
             const optionsStr = options ? options.join('|') : '';
             return `
             <div class="team-card">
                 <div class="team-icon">${icon}</div>
                 <div class="team-info" style="flex:1">
-                    <span class="team-label">${label}</span>
+                    <div style="display:flex; justify-content:space-between; width:100%;">
+                        <span class="team-label">${label}</span>
+                        ${extra}
+                    </div>
                     <div class="editable-field" id="field-${fieldKey}">
                         <span class="team-value ${value ? '' : 'unassigned'}">${displayVal}</span>
                         <span class="edit-icon" onclick="window.enableEdit('${lead.id}', '${fieldKey}', '${value || ''}', ${isDropdown}, '${optionsStr}')">✎</span>
@@ -240,9 +235,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const logoHtml = lead.logo ? `<img src="${lead.logo}" class="company-logo">` : `<div class="logo-placeholder">${lead.customer.charAt(0)}</div>`;
         const slidesBtn = lead.slides ? `<a href="${lead.slides}" target="_blank" class="btn-slides">Slides</a>` : `<button class="btn-outline" onclick="window.editSlides('${lead.id}')">+ Slides</button>`;
-        const linkedInBtn = lead.linkedin ? `<a href="${lead.linkedin}" target="_blank" class="icon-btn-link"><svg width="14" height="14" fill="#0077b5" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg></a>` : '';
+        
+        // LinkedIn Button
+        const linkedInHtml = lead.linkedin 
+            ? `<a href="${lead.linkedin}" target="_blank" class="linkedin-btn"><svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg></a>`
+            : `<span class="linkedin-btn empty" onclick="window.editLinkedIn('${lead.id}')" title="Add LinkedIn">+</span>`;
 
-        // ICONS: Customer (User), Strategic (Target), Manager (Briefcase), Delivery (Truck)
+        // Icons
         const iconUser = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`;
         const iconTarget = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>`;
         const iconBriefcase = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>`;
@@ -254,7 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div style="display:flex; align-items:center; gap:20px;">
                         <div onclick="window.editLogo('${lead.id}')">${logoHtml}</div>
                         <div>
-                            <h2>${lead.customer} ${linkedInBtn}</h2>
+                            <h2>${lead.customer}</h2>
                             <div class="detail-tags" style="margin-top:5px;">${tagsHtml}</div>
                         </div>
                     </div>
@@ -273,6 +272,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
 
                 <div class="status-toggles">
+                    <span class="status-item clickable" onclick="window.toggleTopStatus('${lead.id}', 'intro')">${lead.intro ? checkIcon : xIcon} Intro Meeting</span>
                     <span class="status-item clickable" onclick="window.toggleTopStatus('${lead.id}', 'weekly')">${lead.weekly ? checkIcon : xIcon} Weekly Calls</span>
                 </div>
 
@@ -280,7 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="details-left">
                         <div class="section-title">Team Assignment</div>
                         <div class="team-grid">
-                            ${createCard(iconUser, 'Customer Contact', 'contact', lead.contact, false)}
+                            ${createCard(iconUser, 'Customer Contact', 'contact', lead.contact, false, [], linkedInHtml)}
                             ${createCard(iconTarget, 'Strategic Owner', 'strategic', lead.strategic, true, state.dropdowns.strategic)}
                             ${createCard(iconBriefcase, 'Manager Lead', 'manager', lead.manager, true, state.dropdowns.managers)}
                             ${createCard(iconTruck, 'Delivery Lead', 'delivery', lead.delivery, true, state.dropdowns.managers)}
@@ -359,7 +359,6 @@ document.addEventListener('DOMContentLoaded', () => {
         dom.stageSelect.addEventListener('change', applyFiltersAndSort);
         dom.searchInput.addEventListener('input', applyFiltersAndSort);
         
-        // SORT LOGIC
         dom.sortBtns.prob.addEventListener('click', () => { setSort('score', 'desc'); });
         dom.sortBtns.name.addEventListener('click', () => { setSort('customer', 'asc'); });
 
@@ -384,6 +383,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         window.editLogo = (id) => { const l = state.allLeads.find(x=>x.id===id); const u = prompt("Logo URL:", l.logo); if(u!==null){ l.logo=u; saveLeadData(l); }};
         window.editSlides = (id) => { const l = state.allLeads.find(x=>x.id===id); const u = prompt("Slides URL:", l.slides); if(u!==null){ l.slides=u; saveLeadData(l); }};
+        window.editLinkedIn = (id) => { const l = state.allLeads.find(x=>x.id===id); const u = prompt("LinkedIn URL:", l.linkedin); if(u!==null){ l.linkedin=u; saveLeadData(l); }};
     }
     
     function setSort(field, dir) {
