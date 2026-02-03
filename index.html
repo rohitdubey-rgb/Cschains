@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Leads Dashboard</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="extensions.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -16,23 +15,23 @@
                 <div class="app-icon">L</div>
                 <div>
                     <h1>Leads Dashboard</h1>
-                    <p class="subtitle">Sales pipeline from Google Sheet</p>
                 </div>
             </div>
             <div class="header-actions">
                 <span class="last-updated" id="lastUpdated">Updated just now</span>
                 
                 <button class="btn btn-primary" id="globalSaveBtn">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
                     Save Changes
                 </button>
 
+                <button class="btn btn-outline" id="addLeadBtn" style="color: var(--primary); border-color: var(--primary);">
+                    + Add Lead
+                </button>
+
                 <button class="btn btn-outline" id="refreshBtn">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                     Refresh
                 </button>
                 <button class="btn btn-outline" id="exportBtn">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                     Export (<span id="totalCount">0</span>)
                 </button>
             </div>
@@ -93,6 +92,5 @@
     </div>
 
     <script src="app.js"></script>
-    <script src="extensions.js"></script>
 </body>
 </html>
