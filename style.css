@@ -60,7 +60,7 @@ body { font-family: 'Inter', sans-serif; background-color: var(--bg-gray); color
 .lead-row:hover { background: var(--bg-gray); }
 .lead-row.active { background: #f0fdf9; border-left: 4px solid var(--primary); }
 
-/* --- ICON COLORS (THE FIX) --- */
+/* ICON COLORS (THE FIX) */
 .lead-icon-col { padding-top: 2px; }
 .icon-circle { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; transition: all 0.2s; }
 
@@ -135,9 +135,25 @@ body { font-family: 'Inter', sans-serif; background-color: var(--bg-gray); color
 .info-row:hover .edit-icon { opacity: 1; }
 .edit-input { padding: 2px 5px; border: 1px solid var(--primary); border-radius: 4px; font-size: 0.9rem; width: 100%; }
 
-.pipeline-list { margin-top: 5px; }
-.pipeline-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f3f4f6; font-size: 0.85rem; cursor: pointer; }
-.phase-header { font-size: 0.7rem; font-weight: 700; background: #f1f5f9; padding: 4px 8px; border-radius: 4px; margin-top: 12px; margin-bottom: 4px; border-left: 3px solid #cbd5e1; }
+/* Pipeline Fix */
+.pipeline-list { margin-top: 5px; width: 100%; }
+.pipeline-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f3f4f6; font-size: 0.85rem; cursor: pointer; width: 100%; }
+.phase-header { 
+    font-size: 0.7rem; 
+    font-weight: 700; 
+    background: #f1f5f9; 
+    padding: 4px 8px; 
+    border-radius: 4px; 
+    margin-top: 12px; 
+    margin-bottom: 4px; 
+    border-left: 3px solid #cbd5e1;
+    width: 100%; /* Force width */
+    display: block; /* Ensure it takes a line */
+}
+.phase-header.p1 { border-color: #f43f5e; background: #fff1f2; color: #be123c; }
+.phase-header.p2 { border-color: #f59e0b; background: #fffbeb; color: #b45309; }
+.phase-header.p3 { border-color: #22c55e; background: #f0fdf4; color: #15803d; }
+
 .status-text-yes { color: var(--success); font-weight: 600; background: #dcfce7; padding: 1px 6px; border-radius: 4px; }
 .status-text-no { color: #d1d5db; }
 
