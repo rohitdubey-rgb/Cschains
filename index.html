@@ -13,58 +13,35 @@
         <header class="top-bar">
             <div class="app-info">
                 <div class="app-icon">L</div>
-                <div>
-                    <h1>Leads Dashboard</h1>
-                </div>
+                <div><h1>Leads Dashboard</h1></div>
             </div>
             <div class="header-actions">
-                <span class="last-updated" id="lastUpdated">Updated just now</span>
-                
-                <button class="btn btn-primary" id="globalSaveBtn">
-                    Save Changes
-                </button>
-
-                <button class="btn btn-outline" id="addLeadBtn" style="color: var(--primary); border-color: var(--primary);">
-                    + Add Lead
-                </button>
-
-                <button class="btn btn-outline" id="refreshBtn">
-                    Refresh
-                </button>
-                <button class="btn btn-outline" id="exportBtn">
-                    Export (<span id="totalCount">0</span>)
-                </button>
+                <button class="btn btn-primary" id="globalSaveBtn">Save Changes</button>
+                <button class="btn btn-outline" id="addLeadBtn" style="color:var(--primary); border-color:var(--primary);">+ Add Lead</button>
+                <button class="btn btn-outline" id="refreshBtn">Refresh</button>
+                <button class="btn btn-outline" id="exportBtn">Export</button>
             </div>
         </header>
 
         <section class="filter-section">
             <div class="search-container">
                 <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                <input type="text" id="searchInput" placeholder="Search customer, contact or notes...">
+                <input type="text" id="searchInput" placeholder="Search...">
             </div>
-            
             <div class="filter-row">
-                <select id="originSelect" class="filter-select">
-                    <option value="all">All Origins</option>
-                </select>
-
+                <select id="originSelect" class="filter-select"><option value="all">All Origins</option></select>
                 <select id="typeSelect" class="filter-select">
                     <option value="all">All Types</option>
                     <option value="pim">PIM</option>
                     <option value="cm">CM</option>
                     <option value="both">Both</option>
                 </select>
-
-                <select id="managerSelect" class="filter-select">
-                    <option value="all">All Managers</option>
-                </select>
-
+                <select id="managerSelect" class="filter-select"><option value="all">All Managers</option></select>
                 <select id="stageSelect" class="filter-select">
                     <option value="all">All Stages</option>
                     <option value="contract">Contract Signed</option>
                     <option value="loi_signed">LOI Signed</option>
                     <option value="loi_issued">LOI Issued</option>
-                    <option value="intro">Intro Meeting Done</option>
                 </select>
             </div>
         </section>
@@ -74,14 +51,13 @@
                 <div class="list-header">
                     <h3><span id="listCount">0</span> Leads</h3>
                     <div class="list-sort">
-                        <span id="sortCustomer" class="sort-btn">Customer ↑↓</span>
-                        <span id="sortOrigin" class="sort-btn">Origin ↑↓</span>
-                        <span id="sortManager" class="sort-btn">Manager ↑↓</span>
-                        <span id="sortFollowup" class="sort-btn">Score ↑↓</span>
+                        <span id="sortCustomer" class="sort-btn">Customer</span>
+                        <span id="sortManager" class="sort-btn">Manager</span>
+                        <span id="sortFollowup" class="sort-btn">Score</span>
                     </div>
                 </div>
                 <div id="leadsListContainer" class="leads-list">
-                    <div class="loading-state">Loading leads...</div>
+                    <div class="loading-state">Loading...</div>
                 </div>
             </aside>
 
