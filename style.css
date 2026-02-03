@@ -155,3 +155,40 @@ body { font-family: 'Inter', sans-serif; background-color: var(--bg-gray); color
 .notes-area textarea { flex: 1; width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; font-size: 1rem; line-height: 1.5; resize: none; font-family: inherit; }
 .notes-area button { align-self: flex-end; margin-top: 10px; }
 .loading-state, .empty-state { padding: 40px; text-align: center; color: var(--text-gray); }
+
+
+
+
+/* ... [KEEP ALL PREVIOUS CSS] ... */
+
+/* --- ADD THESE NEW STYLES --- */
+
+/* DEAD STATUS ROW */
+.lead-row.is-dead {
+    opacity: 0.6;
+    background: #f9fafb !important;
+    border-left: 4px solid #9ca3af !important; /* Grey Border */
+}
+
+/* DEAD ICON (Black X) */
+.lead-row.is-dead .icon-circle {
+    background: #374151 !important; /* Dark Grey Background */
+    color: white !important;
+    font-weight: bold;
+}
+
+/* MARK DEAD BUTTON */
+.btn-dead {
+    height: 28px; padding: 0 10px; border-radius: 6px; font-size: 0.75rem; 
+    cursor: pointer; border: 1px solid #4b5563; 
+    background: white; color: #4b5563;
+    display: flex; align-items: center; gap: 5px;
+}
+.btn-dead:hover { background: #f3f4f6; color: #111; }
+
+.btn-revive {
+    height: 28px; padding: 0 10px; border-radius: 6px; font-size: 0.75rem; 
+    cursor: pointer; border: 1px solid var(--success); 
+    background: #f0fdf4; color: var(--success);
+    display: flex; align-items: center; gap: 5px;
+}
