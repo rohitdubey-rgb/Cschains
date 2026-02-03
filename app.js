@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const API_URL = 'https://script.google.com/macros/s/AKfycbwnJXSUNrqcZnc5eyJpvQvyUkN5aNmqywUz954nJTonfjA00PE7p3X4CmrHDArhHZ0h4A/exec';
+    const API_URL = 'https://script.google.com/macros/s/AKfycbyiealCUoEgUZWVB3CUs25tPTthMsNqnNQQ4IXEllC4zUrUC1PGrMETKw4Ot1wIFaSJPg/exec';
     
     const state = {
         allLeads: [], filteredLeads: [], selectedLeadId: null,
@@ -63,6 +63,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function recalculateScore(lead) {
         let score = 0;
+        // If dead, score is 0
+        if (lead.dead) {
+            lead.score = 0;
+            lead.progress = 0;
+            lead.phase = 0; // 0 = Dead Phase
+            return;
+        }
+
         if (lead.intro) score += 10;
         if (lead.weekly) score += 5;
         if (lead.pipeline.ppts) score += 10;
@@ -99,6 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const lead = {
             id: `lead-${index}`,
             customer: getValue('Customer') || getValue('Company') || 'Unknown',
+            dead: checkBool('Dead') || checkBool('Inactive'), // NEW: Check Dead Status
             logo: getValue('Logo URL') || getValue('Logo') || '',
             linkedin: getValue('LinkedIn') || getValue('Social') || '',
             slides: getValue('Slides URL') || getValue('Slides') || '',
@@ -122,7 +131,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeStr.includes('both')) lead.tags.push({ text: 'BOTH', type: 'both' });
         else if (typeStr.includes('pim')) lead.tags.push({ text: 'PIM', type: 'pim' });
         else if (typeStr.includes('cm')) lead.tags.push({ text: 'CM', type: 'cm' });
-        // Removed LOI Tag logic as requested
 
         recalculateScore(lead);
         return lead;
@@ -163,6 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let valA, valB;
             if (field === 'score') { valA = a.score; valB = b.score; } 
             else if (field === 'customer') { valA = a.customer.toLowerCase(); valB = b.customer.toLowerCase(); } 
+            
             if (valA < valB) return direction === 'asc' ? -1 : 1;
             if (valA > valB) return direction === 'asc' ? 1 : -1;
             return 0;
@@ -177,20 +186,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
         state.filteredLeads.forEach(lead => {
             const row = document.createElement('div');
-            const phase = lead.phase;
-            row.className = `lead-row phase-${phase} ${state.selectedLeadId === lead.id ? 'active' : ''}`;
+            
+            // Logic for Dead Status
+            const deadClass = lead.dead ? 'is-dead' : `phase-${lead.phase}`;
+            const iconContent = lead.dead 
+                ? `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"></path></svg>` 
+                : `📄`;
+
+            row.className = `lead-row ${deadClass} ${state.selectedLeadId === lead.id ? 'active' : ''}`;
             row.onclick = () => selectLead(lead.id);
 
             const tagsHtml = lead.tags.map(t => `<span class="tag tag-${t.type}">${t.text}</span>`).join('');
             
             row.innerHTML = `
-                <div class="lead-icon-col"><div class="icon-circle">📄</div></div>
+                <div class="lead-icon-col"><div class="icon-circle">${iconContent}</div></div>
                 <div class="lead-content-col">
                     <div class="lead-header-row"><span class="lead-name">${lead.customer}</span>${tagsHtml}</div>
                     <div class="lead-notes">${lead.notes}</div>
                 </div>
                 <div class="lead-meta-col">
-                    <div style="font-size:0.65rem; color:#9ca3af">Win Prob: ${lead.progress}%</div>
+                    <div style="font-size:0.65rem; color:#9ca3af">${lead.dead ? 'DEAD' : `Prob: ${lead.progress}%`}</div>
                 </div>
             `;
             dom.listContainer.appendChild(row);
@@ -206,7 +221,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const checkIcon = `<svg width="14" height="14" stroke="var(--success)" fill="none" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`;
         const xIcon = `<svg width="14" height="14" stroke="var(--text-light)" fill="none" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
         
-        // NEW CARD CREATOR WITH LINKEDIN
+        // --- BUTTONS LOGIC ---
+        const slidesBtn = lead.slides ? `<a href="${lead.slides}" target="_blank" class="btn-slides">Slides</a>` : `<button class="btn-outline" onclick="window.editSlides('${lead.id}')">+ Slides</button>`;
+        const deadBtn = lead.dead 
+            ? `<button class="btn-revive" onclick="window.toggleDead('${lead.id}')">Revive</button>` 
+            : `<button class="btn-dead" onclick="window.toggleDead('${lead.id}')">Mark Dead</button>`;
+
         const createCard = (icon, label, fieldKey, value, isDropdown, options, extra = '') => {
             const displayVal = value || 'Unassigned';
             const optionsStr = options ? options.join('|') : '';
@@ -234,21 +254,17 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
 
         const logoHtml = lead.logo ? `<img src="${lead.logo}" class="company-logo">` : `<div class="logo-placeholder">${lead.customer.charAt(0)}</div>`;
-        const slidesBtn = lead.slides ? `<a href="${lead.slides}" target="_blank" class="btn-slides">Slides</a>` : `<button class="btn-outline" onclick="window.editSlides('${lead.id}')">+ Slides</button>`;
-        
-        // LinkedIn Button
-        const linkedInHtml = lead.linkedin 
+        const linkedInBtn = lead.linkedin 
             ? `<a href="${lead.linkedin}" target="_blank" class="linkedin-btn"><svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg></a>`
             : `<span class="linkedin-btn empty" onclick="window.editLinkedIn('${lead.id}')" title="Add LinkedIn">+</span>`;
 
-        // Icons
         const iconUser = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`;
         const iconTarget = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>`;
         const iconBriefcase = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>`;
         const iconTruck = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>`;
 
         dom.detailsPanel.innerHTML = `
-            <div class="detail-card phase-${phase}">
+            <div class="detail-card phase-${phase} ${lead.dead ? 'is-dead' : ''}">
                 <div class="detail-header-top">
                     <div style="display:flex; align-items:center; gap:20px;">
                         <div onclick="window.editLogo('${lead.id}')">${logoHtml}</div>
@@ -258,6 +274,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
                     <div style="display:flex; gap:10px; align-items:center;">
+                        ${deadBtn}
                         ${slidesBtn}
                         <button class="btn-danger" onclick="window.deleteLead('${lead.id}')" title="Delete">🗑</button>
                     </div>
@@ -280,7 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="details-left">
                         <div class="section-title">Team Assignment</div>
                         <div class="team-grid">
-                            ${createCard(iconUser, 'Customer Contact', 'contact', lead.contact, false, [], linkedInHtml)}
+                            ${createCard(iconUser, 'Customer Contact', 'contact', lead.contact, false, [], linkedInBtn)}
                             ${createCard(iconTarget, 'Strategic Owner', 'strategic', lead.strategic, true, state.dropdowns.strategic)}
                             ${createCard(iconBriefcase, 'Manager Lead', 'manager', lead.manager, true, state.dropdowns.managers)}
                             ${createCard(iconTruck, 'Delivery Lead', 'delivery', lead.delivery, true, state.dropdowns.managers)}
@@ -329,6 +346,14 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) { btn.innerHTML = '✖ Error'; btn.classList.add('btn-error'); }
     }
 
+    // --- NEW: TOGGLE DEAD ---
+    window.toggleDead = (id) => {
+        const lead = state.allLeads.find(l => l.id === id);
+        if (!lead) return;
+        lead.dead = !lead.dead;
+        saveLeadData(lead);
+    };
+
     dom.addLeadBtn.onclick = async () => {
         const name = prompt("Enter New Customer Name:");
         if (!name) return;
@@ -340,55 +365,13 @@ document.addEventListener('DOMContentLoaded', () => {
         dom.addLeadBtn.innerHTML = "+ Add Lead";
     };
 
-    // ... (All code above init() remains the same) ...
-
-    // --- REPLACE THE DELETE FUNCTION AT THE BOTTOM WITH THIS ---
-    
     window.deleteLead = async (id) => {
         const lead = state.allLeads.find(l => l.id === id);
-        
-        if (!lead) {
-            alert("Error: Lead not found in memory.");
-            return;
-        }
-
-        // CONFIRMATION
-        if (!confirm(`⚠️ Are you sure you want to DELETE "${lead.customer}"?\n\nThis will remove the row from the Google Sheet permanently.`)) return;
-        
-        // UI FEEDBACK
-        const btn = document.querySelector('.btn-danger');
-        const originalText = btn ? btn.innerHTML : "🗑";
-        if(btn) btn.innerHTML = "Deleting...";
-
+        if (!confirm(`Delete ${lead.customer}?`)) return;
         try {
-            console.log("Deleting:", lead.customer);
-            
-            const res = await fetch(API_URL, { 
-                method: 'POST', 
-                body: JSON.stringify({ 
-                    action: 'delete', 
-                    customer: lead.customer 
-                }) 
-            });
-            
-            const result = await res.json();
-            console.log("Server Response:", result);
-
-            if (result.status === 'success') {
-                alert("✅ Customer deleted successfully.");
-                // Clear selection and reload
-                state.selectedLeadId = null;
-                dom.detailsPanel.innerHTML = '<div class="empty-state">Select a lead to view details</div>';
-                fetchData(); 
-            } else {
-                alert("❌ Error from Sheet: " + result.message);
-                if(btn) btn.innerHTML = originalText;
-            }
-        } catch(e) { 
-            console.error(e);
-            alert("❌ Network Error: Check console for details.");
-            if(btn) btn.innerHTML = originalText;
-        }
+            const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', customer: lead.customer }) });
+            if ((await res.json()).status === 'success') { alert("Deleted."); fetchData(); }
+        } catch(e) { alert("Error"); }
     };
 
     function setupGlobalFunctions() {
