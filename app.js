@@ -2,9 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const API_URL = 'https://script.google.com/macros/s/AKfycbyOUM7C6Qh1g_o1wmNXDM0wggHxjAxKj_y7GKPEzfcGy4SRlAiphJMISu1WUE1X2CPfyw/exec';
     
     const state = {
-        allLeads: [],
-        filteredLeads: [],
-        selectedLeadId: null,
+        allLeads: [], filteredLeads: [], selectedLeadId: null,
         dropdowns: { managers: [], strategic: [], delivery: [] },
         sort: { field: 'score', direction: 'desc' }
     };
@@ -14,22 +12,15 @@ document.addEventListener('DOMContentLoaded', () => {
         detailsPanel: document.getElementById('detailsPanel'),
         searchInput: document.getElementById('searchInput'),
         listCount: document.getElementById('listCount'),
-        totalCount: document.getElementById('totalCount'),
         refreshBtn: document.getElementById('refreshBtn'),
         saveBtn: document.getElementById('globalSaveBtn'),
         addLeadBtn: document.getElementById('addLeadBtn'),
-        lastUpdated: document.getElementById('lastUpdated'),
         originSelect: document.getElementById('originSelect'),
         typeSelect: document.getElementById('typeSelect'),
         managerSelect: document.getElementById('managerSelect'),
         stageSelect: document.getElementById('stageSelect'),
         phaseSelect: null,
-        sortBtns: {
-            customer: document.getElementById('sortCustomer'),
-            origin: document.getElementById('sortOrigin'),
-            manager: document.getElementById('sortManager'),
-            followup: document.getElementById('sortFollowup')
-        }
+        sortBtns: { customer: document.getElementById('sortCustomer'), manager: document.getElementById('sortManager'), followup: document.getElementById('sortFollowup') }
     };
 
     init();
@@ -45,8 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const filterRow = document.querySelector('.filter-row');
         if (filterRow && !document.getElementById('phaseFilter')) {
             const select = document.createElement('select');
-            select.id = 'phaseFilter';
-            select.className = 'filter-select';
+            select.id = 'phaseFilter'; select.className = 'filter-select';
             select.innerHTML = `<option value="all">All Phases</option><option value="p1">Phase 1: Exploration</option><option value="p2">Phase 2: Validation</option><option value="p3">Phase 3: Execution</option>`;
             filterRow.insertBefore(select, filterRow.firstChild);
             dom.phaseSelect = select;
@@ -59,16 +49,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch(API_URL);
             const data = await response.json();
             state.allLeads = data.map((item, index) => normalizeLead(item, index));
-            extractDropdownOptions();
-            populateFilters();
-            applyFiltersAndSort();
-            updateTimestamp();
+            extractDropdownOptions(); populateFilters(); applyFiltersAndSort();
             if (state.filteredLeads.length > 0 && !state.selectedLeadId) selectLead(state.filteredLeads[0].id);
-            else if (state.selectedLeadId) selectLead(state.selectedLeadId); // Refresh current selection
-        } catch (error) {
-            console.error(error);
-            dom.listContainer.innerHTML = '<div class="loading-state" style="color:red">Error loading data.</div>';
-        }
+            else if (state.selectedLeadId) selectLead(state.selectedLeadId);
+        } catch (error) { dom.listContainer.innerHTML = '<div class="loading-state" style="color:red">Error loading data.</div>'; }
     }
 
     function extractDropdownOptions() {
@@ -127,13 +111,9 @@ document.addEventListener('DOMContentLoaded', () => {
             intro: checkBool('Introductory Meeting') || checkBool('Intro'),
             weekly: checkBool('Weekly Calls'),
             pipeline: {
-                ppts: checkBool('PPTs Shared'),
-                verbal: checkBool('Verbal Agreement'),
-                nda: checkBool('NDA Signed'),
-                loi_issued: checkBool('LOI Issued'),
-                loi_signed: checkBool('LOI Signed'),
-                contract: checkBool('Contract Signed'),
-                parts: checkBool('Parts & Spend Received')
+                ppts: checkBool('PPTs Shared'), verbal: checkBool('Verbal Agreement'), nda: checkBool('NDA Signed'),
+                loi_issued: checkBool('LOI Issued'), loi_signed: checkBool('LOI Signed'),
+                contract: checkBool('Contract Signed'), parts: checkBool('Parts & Spend Received')
             },
             tags: []
         };
@@ -192,11 +172,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const tagsHtml = lead.tags.map(t => `<span class="tag tag-${t.type}">${t.text}</span>`).join('');
             
-            // FIX: Show correct status text based on boolean
+            // FIX: Correct Status Logic
             let statusHtml = '';
             if (lead.weekly) statusHtml = `<span class="dot dot-green"></span> Weekly`;
             else if (lead.intro) statusHtml = `<span class="dot dot-green"></span> Intro`;
-            else statusHtml = `<span class="dot dot-gray"></span> Pending`;
+            else statusHtml = `<span class="dot dot-gray"></span> Prospect`;
 
             row.innerHTML = `
                 <div class="lead-icon-col"><div class="icon-circle">📄</div></div>
@@ -205,7 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="lead-notes">${lead.notes}</div>
                 </div>
                 <div class="lead-meta-col">
-                    <div class="status-indicators"><div class="status-dot">${statusHtml}</div></div>
+                    <div class="status-indicators">${statusHtml}</div>
                     <div style="font-size:0.65rem; color:#9ca3af">Win Prob: ${lead.progress}%</div>
                 </div>
             `;
@@ -225,10 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const createEditable = (fieldKey, value, isDropdown, options) => {
             const displayVal = value || 'Unassigned';
             const optionsStr = options ? options.join('|') : '';
-            return `<div class="editable-field" id="field-${fieldKey}">
-                <span class="info-value ${value ? '' : 'unassigned'}">${displayVal}</span>
-                <span class="edit-icon" onclick="window.enableEdit('${lead.id}', '${fieldKey}', '${value || ''}', ${isDropdown}, '${optionsStr}')">✎</span>
-            </div>`;
+            return `<div class="info-row"><div class="info-text"><span class="info-label">${fieldKey.toUpperCase()}</span><div class="editable-field" id="field-${fieldKey}"><span class="info-value ${value ? '' : 'unassigned'}">${displayVal}</span><span class="edit-icon" onclick="window.enableEdit('${lead.id}', '${fieldKey}', '${value || ''}', ${isDropdown}, '${optionsStr}')">✎</span></div></div></div>`;
         };
 
         const createPipeRow = (label, key, val) => `
@@ -242,27 +219,29 @@ document.addEventListener('DOMContentLoaded', () => {
         const slidesBtn = lead.slides ? `<a href="${lead.slides}" target="_blank" class="btn-slides">Slides</a>` : `<button class="btn-outline" onclick="window.editSlides('${lead.id}')">+ Slides</button>`;
         const linkedInBtn = lead.linkedin ? `<a href="${lead.linkedin}" target="_blank" class="icon-btn-link"><svg width="14" height="14" fill="#0077b5" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg></a>` : '';
 
-        // Added DELETE button in header
         dom.detailsPanel.innerHTML = `
             <div class="detail-card phase-${phase}">
                 <div class="detail-header-top">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <div onclick="window.editLogo('${lead.id}')" style="cursor:pointer">${logoHtml}</div>
+                    <div style="display:flex; align-items:center; gap:15px;">
+                        <div onclick="window.editLogo('${lead.id}')">${logoHtml}</div>
                         <div>
-                            <h2>${lead.customer}</h2>
-                            <div class="detail-tags">${tagsHtml}</div>
+                            <h2>${lead.customer} ${linkedInBtn}</h2>
+                            <div class="detail-tags" style="margin-top:5px;">${tagsHtml}</div>
                         </div>
                     </div>
                     <div style="display:flex; gap:10px; align-items:center;">
                         ${slidesBtn}
-                        <button class="btn-danger" onclick="window.deleteLead('${lead.id}')" title="Delete Customer">🗑</button>
+                        <button class="btn-danger" onclick="window.deleteLead('${lead.id}')" title="Delete">🗑</button>
                     </div>
                 </div>
 
-                <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:var(--text-gray);">
-                    <span>Progress: ${lead.progress}%</span>
+                <div class="progress-section">
+                    <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:var(--text-gray);">
+                        <span>Win Probability</span>
+                        <strong>${lead.progress}%</strong>
+                    </div>
+                    <div class="progress-container"><div class="progress-fill phase-${phase}" style="width: ${lead.progress}%"></div></div>
                 </div>
-                <div class="progress-container"><div class="progress-fill phase-${phase}" style="width: ${lead.progress}%"></div></div>
 
                 <div class="status-toggles">
                     <span class="status-item clickable" onclick="window.toggleTopStatus('${lead.id}', 'intro')">${lead.intro ? checkIcon : xIcon} Intro</span>
@@ -271,16 +250,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 <div class="details-split-view">
                     <div class="details-left">
-                        <div class="section-title">Contact Information</div>
+                        <div class="section-title">Contact & Team</div>
                         <div class="info-grid">
-                            <div class="info-row"><div class="avatar-placeholder">C</div><div class="info-text"><span class="info-label">Contact</span> <div style="display:flex">${createEditable('contact', lead.contact, false)} ${linkedInBtn}</div></div></div>
-                            <div class="info-row"><div class="avatar-placeholder">S</div><div class="info-text"><span class="info-label">Strategy</span> ${createEditable('strategic', lead.strategic, true, state.dropdowns.strategic)}</div></div>
-                        </div>
-
-                        <div class="section-title">Team Assignment</div>
-                        <div class="info-grid">
-                            <div class="info-row"><div class="avatar-placeholder">M</div><div class="info-text"><span class="info-label">Manager</span> ${createEditable('manager', lead.manager, true, state.dropdowns.managers)}</div></div>
-                            <div class="info-row"><div class="avatar-placeholder">D</div><div class="info-text"><span class="info-label">Delivery</span> ${createEditable('delivery', lead.delivery, true, state.dropdowns.managers)}</div></div>
+                            ${createEditable('contact', lead.contact, false)}
+                            ${createEditable('strategic', lead.strategic, true, state.dropdowns.strategic)}
+                            ${createEditable('manager', lead.manager, true, state.dropdowns.managers)}
+                            ${createEditable('delivery', lead.delivery, true, state.dropdowns.managers)}
                         </div>
 
                         <div class="section-title">Pipeline</div>
@@ -309,7 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
-    // --- API ACTIONS ---
+    // --- API & GLOBAL FUNCS ---
     async function saveLeadData(lead) {
         const btn = dom.saveBtn;
         btn.innerHTML = 'Saving...';
@@ -328,39 +303,24 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) { btn.innerHTML = '✖ Error'; btn.classList.add('btn-error'); }
     }
 
-    // --- NEW: ADD LEAD ---
     dom.addLeadBtn.onclick = async () => {
         const name = prompt("Enter New Customer Name:");
         if (!name) return;
-        dom.addLeadBtn.innerHTML = "Creating...";
+        dom.addLeadBtn.innerHTML = "...";
         try {
             const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'create', customer: name }) });
-            const result = await res.json();
-            if (result.status === 'success') {
-                alert("Customer Created!");
-                fetchData(); // Reload
-            } else {
-                alert("Error: " + result.message);
-            }
-        } catch(e) { alert("Network Error"); }
+            if ((await res.json()).status === 'success') { alert("Created!"); fetchData(); }
+        } catch(e) { alert("Error"); }
         dom.addLeadBtn.innerHTML = "+ Add Lead";
     };
 
-    // --- NEW: DELETE LEAD ---
     window.deleteLead = async (id) => {
         const lead = state.allLeads.find(l => l.id === id);
-        if (!confirm(`Are you sure you want to DELETE ${lead.customer}? This cannot be undone.`)) return;
-        
+        if (!confirm(`Delete ${lead.customer}?`)) return;
         try {
             const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', customer: lead.customer }) });
-            const result = await res.json();
-            if (result.status === 'success') {
-                alert("Deleted.");
-                fetchData(); // Reload
-            } else {
-                alert("Error: " + result.message);
-            }
-        } catch(e) { alert("Network Error"); }
+            if ((await res.json()).status === 'success') { alert("Deleted."); fetchData(); }
+        } catch(e) { alert("Error"); }
     };
 
     function setupGlobalFunctions() {
@@ -391,7 +351,6 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         window.editLogo = (id) => { const l = state.allLeads.find(x=>x.id===id); const u = prompt("Logo URL:", l.logo); if(u!==null){ l.logo=u; saveLeadData(l); }};
         window.editSlides = (id) => { const l = state.allLeads.find(x=>x.id===id); const u = prompt("Slides URL:", l.slides); if(u!==null){ l.slides=u; saveLeadData(l); }};
-        window.editLinkedIn = (id) => { const l = state.allLeads.find(x=>x.id===id); const u = prompt("LinkedIn URL:", l.linkedin); if(u!==null){ l.linkedin=u; saveLeadData(l); }};
     }
     
     function setupEventListeners() {
@@ -402,6 +361,7 @@ document.addEventListener('DOMContentLoaded', () => {
              applyFiltersAndSort(); 
         }));
     }
+    
     function populateFilters() {
         const mgrs = state.dropdowns.managers;
         dom.managerSelect.innerHTML = '<option value="all">All Managers</option>' + mgrs.map(m=>`<option value="${m}">${m}</option>`).join('');
