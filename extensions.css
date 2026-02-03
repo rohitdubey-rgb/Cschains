@@ -1,0 +1,61 @@
+/* 1. Make the Main Card Wider */
+.detail-card {
+    max-width: 1200px !important; /* Override the default 500px */
+    display: flex;
+    flex-direction: column;
+}
+
+/* 2. Create a Grid for the bottom content */
+.details-grid-container {
+    display: flex;
+    gap: 30px;
+    margin-top: 20px;
+    border-top: 1px solid var(--border-color);
+    padding-top: 20px;
+}
+
+/* 3. Left Column (Contact, Team, Pipeline) */
+.details-left-col {
+    flex: 1;
+    min-width: 350px;
+}
+
+/* 4. Right Column (Next Steps) */
+.details-right-col {
+    flex: 1.2; /* Give it slightly more space */
+    background-color: #f8fafc;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+}
+
+/* 5. Style the Next Steps Area */
+.details-right-col .section-title {
+    color: var(--primary);
+    font-size: 0.85rem;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+/* Make the textarea tall and look like a document */
+.details-right-col textarea {
+    flex: 1; /* Fill remaining height */
+    min-height: 400px !important;
+    border: 1px solid #cbd5e1 !important;
+    background: white;
+    font-size: 1rem !important;
+    line-height: 1.5;
+    padding: 15px !important;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* Hide the Save Button inside the text area container (we will move it) */
+.details-right-col button {
+    margin-top: 15px !important;
+    background-color: var(--primary);
+    color: white;
+    border: none;
+}
