@@ -63,14 +63,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function recalculateScore(lead) {
         let score = 0;
-        // If dead, score is 0
         if (lead.dead) {
-            lead.score = 0;
-            lead.progress = 0;
-            lead.phase = 0; // 0 = Dead Phase
+            lead.score = 0; lead.progress = 0; lead.phase = 0;
             return;
         }
-
         if (lead.intro) score += 10;
         if (lead.weekly) score += 5;
         if (lead.pipeline.ppts) score += 10;
@@ -107,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const lead = {
             id: `lead-${index}`,
             customer: getValue('Customer') || getValue('Company') || 'Unknown',
-            dead: checkBool('Dead') || checkBool('Inactive'), // NEW: Check Dead Status
+            dead: checkBool('Dead') || checkBool('Inactive'),
             logo: getValue('Logo URL') || getValue('Logo') || '',
             linkedin: getValue('LinkedIn') || getValue('Social') || '',
             slides: getValue('Slides URL') || getValue('Slides') || '',
@@ -171,7 +167,6 @@ document.addEventListener('DOMContentLoaded', () => {
             let valA, valB;
             if (field === 'score') { valA = a.score; valB = b.score; } 
             else if (field === 'customer') { valA = a.customer.toLowerCase(); valB = b.customer.toLowerCase(); } 
-            
             if (valA < valB) return direction === 'asc' ? -1 : 1;
             if (valA > valB) return direction === 'asc' ? 1 : -1;
             return 0;
@@ -187,7 +182,6 @@ document.addEventListener('DOMContentLoaded', () => {
         state.filteredLeads.forEach(lead => {
             const row = document.createElement('div');
             
-            // Logic for Dead Status
             const deadClass = lead.dead ? 'is-dead' : `phase-${lead.phase}`;
             const iconContent = lead.dead 
                 ? `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"></path></svg>` 
@@ -221,11 +215,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const checkIcon = `<svg width="14" height="14" stroke="var(--success)" fill="none" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`;
         const xIcon = `<svg width="14" height="14" stroke="var(--text-light)" fill="none" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
         
-        // --- BUTTONS LOGIC ---
         const slidesBtn = lead.slides ? `<a href="${lead.slides}" target="_blank" class="btn-slides">Slides</a>` : `<button class="btn-outline" onclick="window.editSlides('${lead.id}')">+ Slides</button>`;
         const deadBtn = lead.dead 
-            ? `<button class="btn-revive" onclick="window.toggleDead('${lead.id}')">Revive</button>` 
-            : `<button class="btn-dead" onclick="window.toggleDead('${lead.id}')">Mark Dead</button>`;
+            ? `<button class="btn-revive" onclick="window.toggleDead('${lead.id}')">Revive Project</button>` 
+            : `<button class="btn-dead" onclick="window.toggleDead('${lead.id}')">Mark Project Dead</button>`;
 
         const createCard = (icon, label, fieldKey, value, isDropdown, options, extra = '') => {
             const displayVal = value || 'Unassigned';
@@ -274,7 +267,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
                     <div style="display:flex; gap:10px; align-items:center;">
-                        ${deadBtn}
                         ${slidesBtn}
                         <button class="btn-danger" onclick="window.deleteLead('${lead.id}')" title="Delete">🗑</button>
                     </div>
@@ -315,6 +307,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             ${createPipeRow('Contract Signed', 'contract', lead.pipeline.contract)}
                             ${createPipeRow('Parts Received', 'parts', lead.pipeline.parts)}
                         </div>
+
+                        <div class="action-footer">
+                            ${deadBtn}
+                        </div>
                     </div>
 
                     <div class="details-right">
@@ -346,7 +342,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) { btn.innerHTML = '✖ Error'; btn.classList.add('btn-error'); }
     }
 
-    // --- NEW: TOGGLE DEAD ---
     window.toggleDead = (id) => {
         const lead = state.allLeads.find(l => l.id === id);
         if (!lead) return;
