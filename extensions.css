@@ -1,48 +1,81 @@
-/* --- Phase Headers in Pipeline List --- */
+/* --- 1. Background Colors (High Specificity) --- */
+/* We target the header and force the background color */
+.detail-card.phase-1 .detail-header-top { 
+    background: linear-gradient(to bottom, #fff1f2, #fff) !important; 
+    border-top: 4px solid #f43f5e;
+}
+.detail-card.phase-2 .detail-header-top { 
+    background: linear-gradient(to bottom, #fffbeb, #fff) !important; 
+    border-top: 4px solid #f59e0b;
+}
+.detail-card.phase-3 .detail-header-top { 
+    background: linear-gradient(to bottom, #f0fdf4, #fff) !important; 
+    border-top: 4px solid #22c55e;
+}
+
+/* Ensure the header padding looks good with the color */
+.detail-header-top {
+    margin: -20px -20px 20px -20px !important;
+    padding: 20px !important;
+    border-radius: 12px 12px 0 0;
+}
+
+/* --- 2. Split Layout (The Fix for "Messed Up Right Side") --- */
+.detail-card {
+    max-width: 1400px !important; /* Make card wider */
+}
+
+/* The container that holds Left (Info) and Right (Notes) */
+.details-split-view {
+    display: flex;
+    flex-direction: row; /* Force side-by-side */
+    gap: 30px;
+    width: 100%;
+    align-items: stretch;
+}
+
+.details-left {
+    flex: 1;
+    min-width: 400px;
+}
+
+.details-right {
+    flex: 1;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Make the textarea huge to fill the right side */
+.details-right textarea {
+    flex-grow: 1;
+    min-height: 400px;
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    padding: 15px;
+    font-size: 1rem;
+    resize: none;
+}
+
+/* --- 3. Pipeline Phase Headers --- */
 .phase-header {
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     font-weight: 800;
-    color: #64748b;
-    background: #f8fafc;
+    color: #475569;
     padding: 8px 12px;
     margin-top: 15px;
     margin-bottom: 5px;
     border-radius: 6px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    border-left: 4px solid #cbd5e1;
-    display: flex;
-    align-items: center;
+    background: #f1f5f9;
+    border-left-width: 4px;
+    border-left-style: solid;
 }
+.phase-header.p1 { border-color: #f43f5e; background: #fff1f2; color: #be123c; }
+.phase-header.p2 { border-color: #f59e0b; background: #fffbeb; color: #b45309; }
+.phase-header.p3 { border-color: #22c55e; background: #f0fdf4; color: #15803d; }
 
-/* Phase Specific Colors */
-.phase-header.p1 { border-color: #fca5a5; color: #b91c1c; background: #fef2f2; } /* Red - Early */
-.phase-header.p2 { border-color: #fcd34d; color: #b45309; background: #fffbeb; } /* Yellow - Mid */
-.phase-header.p3 { border-color: #4ade80; color: #15803d; background: #f0fdf4; } /* Green - Late */
-
-/* --- Dynamic Background for Customer Header --- */
-/* We target the header container inside the detail card */
-.detail-card.phase-1 .detail-header-top { 
-    background: linear-gradient(to bottom, #fff1f2, #ffffff); 
-    border-bottom: 1px solid #fee2e2;
-    padding: 15px; margin: -20px -20px 15px -20px; border-radius: 12px 12px 0 0; 
-}
-
-.detail-card.phase-2 .detail-header-top { 
-    background: linear-gradient(to bottom, #fffbeb, #ffffff); 
-    border-bottom: 1px solid #fef3c7;
-    padding: 15px; margin: -20px -20px 15px -20px; border-radius: 12px 12px 0 0; 
-}
-
-.detail-card.phase-3 .detail-header-top { 
-    background: linear-gradient(to bottom, #f0fdf4, #ffffff); 
-    border-bottom: 1px solid #dcfce7;
-    padding: 15px; margin: -20px -20px 15px -20px; border-radius: 12px 12px 0 0; 
-}
-
-/* --- New Filter Dropdown --- */
-#phaseFilter {
-    border: 2px solid #e2e8f0;
-    font-weight: 600;
-    color: var(--primary);
-}
+/* Filter Dropdown Style */
+#phaseFilter { border: 2px solid var(--primary); font-weight: 600; }
