@@ -49,35 +49,37 @@ body { font-family: 'Inter', sans-serif; background-color: var(--bg-gray); color
 /* Main Grid */
 .dashboard-grid { display: flex; flex: 1; overflow: hidden; }
 
-/* Left List */
-.list-panel { width: 380px; background: white; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; }
-.list-header { padding: 8px 12px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-gray); flex-shrink: 0; }
-.sort-btn { cursor: pointer; margin-left: 8px; } 
-.sort-btn:hover, .sort-btn.active-sort { color: var(--primary); font-weight: 600; }
-.leads-list { flex: 1; overflow-y: auto; }
+/* --- FIXED ICON STYLES --- */
+.lead-icon-col { 
+    display: flex;
+    align-items: center; /* Vertically center icon in row */
+    padding-right: 10px;
+    min-width: 40px; /* Give it enough space so it doesn't squish */
+}
 
-.lead-row { padding: 8px 12px; border-bottom: 1px solid var(--border-color); cursor: pointer; transition: background 0.1s; display: flex; gap: 10px; }
-.lead-row:hover { background: var(--bg-gray); }
-.lead-row.active { background: #f0fdf9; border-left: 4px solid var(--primary); }
+.icon-circle { 
+    width: 32px; 
+    height: 32px; 
+    border-radius: 50%; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-size: 1rem; 
+    transition: all 0.2s;
+    flex-shrink: 0; /* Prevent circle from being squashed */
+}
 
-/* ICON COLORS (THE FIX) */
-.lead-icon-col { padding-top: 2px; }
-.icon-circle { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; transition: all 0.2s; }
-
-/* Default */
-.icon-circle { background: #f3f4f6; color: #9ca3af; }
+/* Default Color (Blueish) */
+.icon-circle { background: #e0f2fe; color: #0284c7; }
 
 /* Phase 1: Red */
 .lead-row.phase-1 .icon-circle { background: #fee2e2; color: #ef4444; }
-.lead-row.phase-1 { border-left: 4px solid #f43f5e; }
 
 /* Phase 2: Yellow */
 .lead-row.phase-2 .icon-circle { background: #fef3c7; color: #d97706; }
-.lead-row.phase-2 { border-left: 4px solid #f59e0b; }
 
 /* Phase 3: Green */
 .lead-row.phase-3 .icon-circle { background: #dcfce7; color: #16a34a; }
-.lead-row.phase-3 { border-left: 4px solid #22c55e; }
 
 .lead-content-col { flex: 1; overflow: hidden; }
 .lead-name { font-weight: 700; font-size: 0.9rem; margin-right: 5px; }
