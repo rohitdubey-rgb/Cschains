@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const API_URL = 'https://script.google.com/macros/s/AKfycbyOUM7C6Qh1g_o1wmNXDM0wggHxjAxKj_y7GKPEzfcGy4SRlAiphJMISu1WUE1X2CPfyw/exec';
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwnJXSUNrqcZnc5eyJpvQvyUkN5aNmqywUz954nJTonfjA00PE7p3X4CmrHDArhHZ0h4A/exec';
     
     const state = {
         allLeads: [], filteredLeads: [], selectedLeadId: null,
@@ -340,13 +340,55 @@ document.addEventListener('DOMContentLoaded', () => {
         dom.addLeadBtn.innerHTML = "+ Add Lead";
     };
 
+    // ... (All code above init() remains the same) ...
+
+    // --- REPLACE THE DELETE FUNCTION AT THE BOTTOM WITH THIS ---
+    
     window.deleteLead = async (id) => {
         const lead = state.allLeads.find(l => l.id === id);
-        if (!confirm(`Delete ${lead.customer}?`)) return;
+        
+        if (!lead) {
+            alert("Error: Lead not found in memory.");
+            return;
+        }
+
+        // CONFIRMATION
+        if (!confirm(`⚠️ Are you sure you want to DELETE "${lead.customer}"?\n\nThis will remove the row from the Google Sheet permanently.`)) return;
+        
+        // UI FEEDBACK
+        const btn = document.querySelector('.btn-danger');
+        const originalText = btn ? btn.innerHTML : "🗑";
+        if(btn) btn.innerHTML = "Deleting...";
+
         try {
-            const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', customer: lead.customer }) });
-            if ((await res.json()).status === 'success') { alert("Deleted."); fetchData(); }
-        } catch(e) { alert("Error"); }
+            console.log("Deleting:", lead.customer);
+            
+            const res = await fetch(API_URL, { 
+                method: 'POST', 
+                body: JSON.stringify({ 
+                    action: 'delete', 
+                    customer: lead.customer 
+                }) 
+            });
+            
+            const result = await res.json();
+            console.log("Server Response:", result);
+
+            if (result.status === 'success') {
+                alert("✅ Customer deleted successfully.");
+                // Clear selection and reload
+                state.selectedLeadId = null;
+                dom.detailsPanel.innerHTML = '<div class="empty-state">Select a lead to view details</div>';
+                fetchData(); 
+            } else {
+                alert("❌ Error from Sheet: " + result.message);
+                if(btn) btn.innerHTML = originalText;
+            }
+        } catch(e) { 
+            console.error(e);
+            alert("❌ Network Error: Check console for details.");
+            if(btn) btn.innerHTML = originalText;
+        }
     };
 
     function setupGlobalFunctions() {
