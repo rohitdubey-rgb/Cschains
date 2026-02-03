@@ -261,10 +261,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="details-left">
                         <div class="section-title">Contact & Team</div>
                         <div class="info-grid">
-                            ${createEditable('contact', lead.contact, false)}
-                            ${createEditable('strategic', lead.strategic, true, state.dropdowns.strategic)}
-                            ${createEditable('manager', lead.manager, true, state.dropdowns.managers)}
-                            ${createEditable('delivery', lead.delivery, true, state.dropdowns.managers)}
+                            ${createEditable('Customer Contact', lead.contact, false)}
+                            ${createEditable('Strategic Owner', lead.strategic, true, state.dropdowns.strategic)}
+                            ${createEditable('CSC Manager', lead.manager, true, state.dropdowns.managers)}
+                            ${createEditable('CSC Delivery', lead.delivery, true, state.dropdowns.managers)}
                         </div>
 
                         <div class="section-title">Pipeline</div>
