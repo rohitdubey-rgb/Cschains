@@ -1,12 +1,19 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // -------------------------------------------------------------
+    // CONFIGURATION
+    // -------------------------------------------------------------
     const API_URL = 'https://script.google.com/macros/s/AKfycbyOUM7C6Qh1g_o1wmNXDM0wggHxjAxKj_y7GKPEzfcGy4SRlAiphJMISu1WUE1X2CPfyw/exec';
     
+    // STATE
     const state = {
-        allLeads: [], filteredLeads: [], selectedLeadId: null,
+        allLeads: [],
+        filteredLeads: [],
+        selectedLeadId: null,
         dropdowns: { managers: [], strategic: [], delivery: [] },
         sort: { field: 'score', direction: 'desc' }
     };
 
+    // DOM ELEMENTS
     const dom = {
         listContainer: document.getElementById('leadsListContainer'),
         detailsPanel: document.getElementById('detailsPanel'),
@@ -23,13 +30,14 @@ document.addEventListener('DOMContentLoaded', () => {
         sortBtns: { prob: document.getElementById('sortProb'), name: document.getElementById('sortName') }
     };
 
+    // INITIALIZE
     init();
 
     function init() {
         createPhaseFilter();
         fetchData();
         setupEventListeners();
-        setupGlobalFunctions();
+        setupGlobalFunctions(); // IMPORTANT: This fixes button clicks
     }
 
     function createPhaseFilter() {
@@ -39,16 +47,33 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // --- DATA FETCHING ---
     async function fetchData() {
         try {
             dom.listContainer.innerHTML = '<div class="loading-state"><span>🔄</span><span>Loading Pipeline...</span></div>';
             const response = await fetch(API_URL);
             const data = await response.json();
+            
             state.allLeads = data.map((item, index) => normalizeLead(item, index));
-            extractDropdownOptions(); populateFilters(); applyFiltersAndSort();
-            if (state.filteredLeads.length > 0 && !state.selectedLeadId) selectLead(state.filteredLeads[0].id);
-            else if (state.selectedLeadId) selectLead(state.selectedLeadId);
-        } catch (error) { dom.listContainer.innerHTML = '<div class="empty-state">⚠️ Error loading data.</div>'; }
+            extractDropdownOptions();
+            populateFilters();
+            applyFiltersAndSort();
+            
+            // Restore selection if possible, else pick first
+            if (state.selectedLeadId && state.filteredLeads.find(l => l.id === state.selectedLeadId)) {
+                // Just update details, don't re-render list
+                updateListHighlight(state.selectedLeadId);
+                renderDetails(state.allLeads.find(l => l.id === state.selectedLeadId));
+            } else if (state.filteredLeads.length > 0) {
+                selectLead(state.filteredLeads[0].id);
+            } else {
+                dom.detailsPanel.innerHTML = '<div class="empty-state">No leads found.</div>';
+            }
+
+        } catch (error) {
+            console.error(error);
+            dom.listContainer.innerHTML = '<div class="empty-state">⚠️ Error loading data.</div>';
+        }
     }
 
     function extractDropdownOptions() {
@@ -58,9 +83,11 @@ document.addEventListener('DOMContentLoaded', () => {
         state.dropdowns.delivery = getUnique('delivery');
     }
 
+    // --- LOGIC ---
     function recalculateScore(lead) {
         let score = 0;
         if (lead.dead) { lead.score=0; lead.progress=0; lead.phase=0; return; }
+        
         if (lead.intro) score += 10;
         if (lead.weekly) score += 5;
         if (lead.pipeline.ppts) score += 10;
@@ -70,6 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (lead.pipeline.loi_signed) score += 30;
         if (lead.pipeline.contract) score += 50;
         if (lead.pipeline.parts) score += 10;
+        
         lead.score = score;
         lead.progress = Math.min(100, Math.round((score / 160) * 100));
         lead.phase = (score <= 35) ? 1 : (score <= 70) ? 2 : 3;
@@ -116,6 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return lead;
     }
 
+    // --- FILTERING ---
     function applyFiltersAndSort() {
         const query = dom.searchInput.value.toLowerCase();
         const originVal = dom.originSelect.value;
@@ -129,12 +158,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const matchesOrigin = originVal === 'all' || lead.origin === originVal;
             const matchesManager = managerVal === 'all' || lead.manager === managerVal;
             const matchesType = typeVal === 'all' || lead.type === typeVal || lead.type === 'both';
+            
             let matchesPhase = true;
             if (phaseVal !== 'all') {
                 if (phaseVal === 'p1' && lead.phase !== 1) matchesPhase = false;
                 if (phaseVal === 'p2' && lead.phase !== 2) matchesPhase = false;
                 if (phaseVal === 'p3' && lead.phase !== 3) matchesPhase = false;
             }
+
             let matchesStage = true;
             if (stageVal === 'contract' && !lead.pipeline.contract) matchesStage = false;
             if (stageVal === 'loi_signed' && !lead.pipeline.loi_signed) matchesStage = false;
@@ -166,8 +197,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const deadClass = lead.dead ? 'is-dead' : `phase-${lead.phase}`;
             const iconContent = lead.dead ? '✕' : (lead.phase === 3 ? '★' : '📄');
             
+            row.id = `row-${lead.id}`; // Crucial for no-refresh selection
             row.className = `lead-row ${deadClass} ${state.selectedLeadId === lead.id ? 'active' : ''}`;
-            row.style.animationDelay = `${idx * 0.05}s`; // Staggered Animation
+            row.style.animationDelay = `${idx * 0.05}s`;
             row.onclick = () => selectLead(lead.id);
 
             const tagsHtml = lead.tags.map(t => `<span class="tag tag-${t.type}">${t.text}</span>`).join('');
@@ -186,7 +218,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function selectLead(id) { state.selectedLeadId = id; renderList(); renderDetails(state.allLeads.find(l => l.id === id)); }
+    // --- OPTIMIZED SELECTION (NO REFRESH) ---
+    function selectLead(id) {
+        state.selectedLeadId = id;
+        updateListHighlight(id);
+        renderDetails(state.allLeads.find(l => l.id === id));
+    }
+
+    function updateListHighlight(id) {
+        // Remove active from all
+        document.querySelectorAll('.lead-row').forEach(r => r.classList.remove('active'));
+        // Add active to current
+        const row = document.getElementById(`row-${id}`);
+        if (row) row.classList.add('active');
+    }
 
     function renderDetails(lead) {
         if (!lead) return;
@@ -199,7 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const iconTruck = `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>`;
         const iconLink = `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>`;
 
-        // LOGO & LINKS
+        // LOGIC FOR BUTTONS
         const logoHtml = lead.logo ? `<img src="${lead.logo}" class="company-logo">` : `<div class="logo-placeholder">${lead.customer.charAt(0)}</div>`;
         const slidesBtn = lead.slides 
             ? `<div style="display:flex;align-items:center;gap:5px"><a href="${lead.slides}" target="_blank" class="btn-slides">Open Slides</a><span class="edit-btn-mini" onclick="window.editSlides('${lead.id}')">✏️</span></div>` 
@@ -208,7 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ? `<a href="${lead.linkedin}" target="_blank" style="color:#0077b5; margin-left:5px;">${iconLink}</a>`
             : `<span style="cursor:pointer; opacity:0.3; margin-left:5px;" onclick="window.editLinkedIn('${lead.id}')">+</span>`;
 
-        // DYNAMIC CONTENT GENERATORS
+        // GENERATORS
         const createTeamCard = (icon, role, fieldKey, val, isDrop, opts) => `
             <div class="team-card">
                 <div class="team-icon-box">${icon}</div>
@@ -220,7 +265,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div style="display:flex; align-items:center;">
                         <span class="team-name ${val?'':'unassigned'}">${val||'Unassigned'}</span>
                         <span class="edit-btn-mini" onclick="window.enableEdit('${lead.id}', '${fieldKey}', '${val||''}', ${isDrop}, '${opts.join('|')}')">✎</span>
-                        <div id="field-${fieldKey}" style="display:none"></div> </div>
+                        <div id="field-${fieldKey}" style="display:none"></div>
+                    </div>
                 </div>
             </div>`;
 
@@ -231,10 +277,10 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>`;
 
         const deadBtn = lead.dead 
-            ? `<button class="btn-primary btn-block-danger" onclick="window.toggleDead('${lead.id}')">♻️ Revive Project</button>` 
+            ? `<button class="btn-block-revive" onclick="window.toggleDead('${lead.id}')">♻️ Revive Project</button>` 
             : `<button class="btn-danger btn-block-danger" onclick="window.toggleDead('${lead.id}')">✕ Mark as Dead</button>`;
 
-        // RENDER DETAILS
+        // RENDER DETAILS HTML
         dom.detailsPanel.innerHTML = `
             <div class="detail-card phase-${phase} ${lead.dead ? 'is-dead' : ''}">
                 <div class="detail-header-top">
@@ -280,20 +326,18 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div class="phase-title p1">Phase 1: Exploration</div>
                             ${createPipelineRow('PPTs Shared', 'ppts', lead.pipeline.ppts)}
                             ${createPipelineRow('Verbal Agreement', 'verbal', lead.pipeline.verbal)}
-                            
                             <div class="phase-title p2">Phase 2: Validation</div>
                             ${createPipelineRow('NDA Signed', 'nda', lead.pipeline.nda)}
                             ${createPipelineRow('LOI Issued', 'loi_issued', lead.pipeline.loi_issued)}
-                            
                             <div class="phase-title p3">Phase 3: Execution</div>
                             ${createPipelineRow('Contract Signed', 'contract', lead.pipeline.contract)}
                             ${createPipelineRow('Parts Received', 'parts', lead.pipeline.parts)}
                         </div>
 
                         <div class="left-footer">
-                            <div style="display:flex; gap:10px;">
-                                ${deadBtn}
-                                <button class="btn-outline" style="width:40px; justify-content:center;" onclick="window.deleteLead('${lead.id}')" title="Delete Permanently">🗑</button>
+                            <div style="display:flex; gap:10px; width:100%">
+                                <div style="flex:1">${deadBtn}</div>
+                                <button class="btn-outline" style="width:40px; justify-content:center;" onclick="window.deleteLead('${lead.id}')" title="Delete">🗑</button>
                             </div>
                         </div>
                     </div>
@@ -312,18 +356,22 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
-    // --- SAVING & ACTIONS ---
+    // --- ACTIONS & API ---
     async function saveLeadData(lead) {
         const btn = dom.saveBtn;
         btn.innerText = 'Saving...';
         recalculateScore(lead);
-        renderList();
+        
+        // Update list visually without reload
+        const row = document.getElementById(`row-${lead.id}`);
+        if(row) {
+            row.querySelector('.win-prob').innerText = lead.dead ? 'DEAD' : `${lead.progress}%`;
+            row.className = `lead-row ${lead.dead ? 'is-dead' : 'phase-'+lead.phase} active`;
+        }
         renderDetails(lead);
         
-        // Map 'notes' -> 'Current Progress' for backend
         const payload = { ...lead, ...lead.pipeline, action: 'update' };
-        payload['Current Progress'] = lead.notes;
-        delete payload.notes;
+        payload['Current Progress'] = lead.notes; delete payload.notes;
 
         try {
             await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
@@ -333,74 +381,75 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) { btn.innerText = 'Error'; }
     }
 
-    window.toggleDead = (id) => { const l = state.allLeads.find(x=>x.id===id); if(l){ l.dead=!l.dead; saveLeadData(l); } };
-    window.togglePipeline = (id, key) => { const l = state.allLeads.find(x=>x.id===id); if(l){ l.pipeline[key]=!l.pipeline[key]; saveLeadData(l); } };
-    window.toggleTopStatus = (id, key) => { const l = state.allLeads.find(x=>x.id===id); if(l){ l[key]=!l[key]; saveLeadData(l); } };
-    window.saveNotes = () => { const l = state.allLeads.find(x=>x.id===state.selectedLeadId); if(l){ l.notes = document.getElementById('notesArea').value; saveLeadData(l); } };
-
-    // ... (Keep existing enableEdit, finishEdit, editLogo, etc. from previous response) ...
-    
-    // RE-INSERTING HELPER FUNCTIONS TO ENSURE COMPLETENESS
-    window.enableEdit = (id, field, val, isDropdown, opts) => {
-        // Swap text for input
-        const container = document.querySelector(`.team-card #field-${field}`).parentElement; 
-        const displaySpan = container.querySelector('.team-name');
-        const editBtn = container.querySelector('.edit-btn-mini');
+    // --- GLOBAL FUNCTIONS (EXPOSED TO WINDOW) ---
+    function setupGlobalFunctions() {
+        window.toggleDead = (id) => { const l = state.allLeads.find(x=>x.id===id); if(l){ l.dead=!l.dead; saveLeadData(l); } };
+        window.togglePipeline = (id, key) => { const l = state.allLeads.find(x=>x.id===id); if(l){ l.pipeline[key]=!l.pipeline[key]; saveLeadData(l); } };
+        window.toggleTopStatus = (id, key) => { const l = state.allLeads.find(x=>x.id===id); if(l){ l[key]=!l[key]; saveLeadData(l); } };
+        window.saveNotes = () => { const l = state.allLeads.find(x=>x.id===state.selectedLeadId); if(l){ l.notes = document.getElementById('notesArea').value; saveLeadData(l); } };
         
-        displaySpan.style.display = 'none';
-        editBtn.style.display = 'none';
+        window.enableEdit = (id, field, val, isDropdown, opts) => {
+            const container = document.querySelector(`.team-card #field-${field}`).parentElement; 
+            const displaySpan = container.querySelector('.team-name');
+            const editBtn = container.querySelector('.edit-btn-mini');
+            displaySpan.style.display = 'none'; editBtn.style.display = 'none';
 
-        let inputHtml = '';
-        if (isDropdown) {
-            const options = opts.split('|').map(o=>`<option value="${o}" ${o===val?'selected':''}>${o}</option>`).join('');
-            inputHtml = `<select class="edit-input" id="input-${field}" onblur="window.finishEdit('${id}','${field}')">${options}<option value="Unassigned">Unassigned</option></select>`;
-        } else {
-            inputHtml = `<input class="edit-input" id="input-${field}" value="${val}" onblur="window.finishEdit('${id}','${field}')" onkeydown="if(event.key==='Enter') window.finishEdit('${id}','${field}')">`;
-        }
+            const wrapper = document.createElement('div');
+            if (isDropdown) {
+                const options = opts.split('|').map(o=>`<option value="${o}" ${o===val?'selected':''}>${o}</option>`).join('');
+                wrapper.innerHTML = `<select class="edit-input" id="input-${field}" onblur="window.finishEdit('${id}','${field}')">${options}<option value="Unassigned">Unassigned</option></select>`;
+            } else {
+                wrapper.innerHTML = `<input class="edit-input" id="input-${field}" value="${val}" onblur="window.finishEdit('${id}','${field}')" onkeydown="if(event.key==='Enter') window.finishEdit('${id}','${field}')">`;
+            }
+            container.appendChild(wrapper);
+            setTimeout(() => document.getElementById(`input-${field}`).focus(), 50);
+        };
+
+        window.finishEdit = (id, field) => {
+            const el = document.getElementById(`input-${field}`);
+            if(el) {
+                const l = state.allLeads.find(x=>x.id===id);
+                l[field] = el.value;
+                saveLeadData(l);
+            }
+        };
         
-        const wrapper = document.createElement('div');
-        wrapper.innerHTML = inputHtml;
-        container.appendChild(wrapper);
-        setTimeout(() => document.getElementById(`input-${field}`).focus(), 50);
-    };
+        window.editLogo = (id) => { const l = state.allLeads.find(x=>x.id===id); const u = prompt("Logo URL:", l.logo); if(u!==null){ l.logo=u; saveLeadData(l); }};
+        window.editSlides = (id) => { const l = state.allLeads.find(x=>x.id===id); const u = prompt("Slides URL:", l.slides); if(u!==null){ l.slides=u; saveLeadData(l); }};
+        window.editLinkedIn = (id) => { const l = state.allLeads.find(x=>x.id===id); const u = prompt("LinkedIn URL:", l.linkedin); if(u!==null){ l.linkedin=u; saveLeadData(l); }};
+        
+        window.deleteLead = async (id) => {
+            const lead = state.allLeads.find(l => l.id === id);
+            if(!confirm(`Delete ${lead.customer}?`)) return;
+            const btn = document.querySelector('.btn-outline[title="Delete"]');
+            if(btn) btn.innerText = '...';
+            try {
+                await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', customer: lead.customer }) });
+                alert('Deleted'); fetchData();
+            } catch(e) { alert('Network Error'); }
+        };
+    }
 
-    window.finishEdit = (id, field) => {
-        const el = document.getElementById(`input-${field}`);
-        if(el) {
-            const l = state.allLeads.find(x=>x.id===id);
-            l[field] = el.value;
-            saveLeadData(l);
-        }
-    };
-    
-    window.editLogo = (id) => { const l = state.allLeads.find(x=>x.id===id); const u = prompt("Logo URL:", l.logo); if(u!==null){ l.logo=u; saveLeadData(l); }};
-    window.editSlides = (id) => { const l = state.allLeads.find(x=>x.id===id); const u = prompt("Slides URL:", l.slides); if(u!==null){ l.slides=u; saveLeadData(l); }};
-    window.editLinkedIn = (id) => { const l = state.allLeads.find(x=>x.id===id); const u = prompt("LinkedIn URL:", l.linkedin); if(u!==null){ l.linkedin=u; saveLeadData(l); }};
-    window.deleteLead = async (id) => {
-        const lead = state.allLeads.find(l => l.id === id);
-        if(!confirm(`Delete ${lead.customer}?`)) return;
-        await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', customer: lead.customer }) });
-        alert('Deleted'); fetchData();
-    };
-    dom.addLeadBtn.onclick = async () => {
-        const name = prompt("Name:"); if(!name) return;
-        await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'create', customer: name }) });
-        alert('Created'); fetchData();
-    };
-
-    function setSort(field, dir) { state.sort.field=field; state.sort.direction=dir; applyFiltersAndSort(); }
+    // --- EVENT LISTENERS ---
     function setupEventListeners() { 
         dom.refreshBtn.addEventListener('click', fetchData);
         dom.sortBtns.prob.addEventListener('click', () => setSort('score', 'desc'));
         dom.sortBtns.name.addEventListener('click', () => setSort('customer', 'asc'));
-        // Filters
         dom.phaseSelect.addEventListener('change', applyFiltersAndSort);
         dom.originSelect.addEventListener('change', applyFiltersAndSort);
         dom.typeSelect.addEventListener('change', applyFiltersAndSort);
         dom.managerSelect.addEventListener('change', applyFiltersAndSort);
         dom.stageSelect.addEventListener('change', applyFiltersAndSort);
         dom.searchInput.addEventListener('input', applyFiltersAndSort);
+        dom.addLeadBtn.onclick = async () => {
+            const name = prompt("Name:"); if(!name) return;
+            dom.addLeadBtn.innerText = '...';
+            await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'create', customer: name }) });
+            alert('Created'); dom.addLeadBtn.innerText = '+ Add Lead'; fetchData();
+        };
     }
+
+    function setSort(field, dir) { state.sort.field=field; state.sort.direction=dir; applyFiltersAndSort(); }
     
     function populateFilters() {
         const mgrs = state.dropdowns.managers;
