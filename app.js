@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const API_URL = 'https://script.google.com/macros/s/AKfycbyiealCUoEgUZWVB3CUs25tPTthMsNqnNQQ4IXEllC4zUrUC1PGrMETKw4Ot1wIFaSJPg/exec';
+    const API_URL = 'https://script.google.com/macros/s/AKfycbyOUM7C6Qh1g_o1wmNXDM0wggHxjAxKj_y7GKPEzfcGy4SRlAiphJMISu1WUE1X2CPfyw/exec';
     
     const state = {
         allLeads: [], filteredLeads: [], selectedLeadId: null,
@@ -112,7 +112,8 @@ document.addEventListener('DOMContentLoaded', () => {
             strategic: getValue('Strategic Owner') || 'Unassigned',
             delivery: getValue('Delivery Lead') || 'Unassigned',
             origin: getValue('Lead Origin') || '',
-            notes: getValue('Notes') || "No notes",
+            // READ: Look for Current Progress, fallback to Notes
+            notes: getValue('Current Progress') || getValue('Notes') || "No notes", 
             intro: checkBool('Introductory Meeting') || checkBool('Intro'),
             weekly: checkBool('Weekly Calls'),
             pipeline: {
@@ -181,7 +182,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         state.filteredLeads.forEach(lead => {
             const row = document.createElement('div');
-            
             const deadClass = lead.dead ? 'is-dead' : `phase-${lead.phase}`;
             const iconContent = lead.dead 
                 ? `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"></path></svg>` 
@@ -215,7 +215,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const checkIcon = `<svg width="14" height="14" stroke="var(--success)" fill="none" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`;
         const xIcon = `<svg width="14" height="14" stroke="var(--text-light)" fill="none" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
         
-        const slidesBtn = lead.slides ? `<a href="${lead.slides}" target="_blank" class="btn-slides">Slides</a>` : `<button class="btn-outline" onclick="window.editSlides('${lead.id}')">+ Slides</button>`;
+        // --- BUTTONS LOGIC ---
+        // EDIT SLIDES LINK ADDED HERE
+        let slidesBtn;
+        if (lead.slides) {
+            slidesBtn = `
+                <div style="display:flex; align-items:center; gap:5px;">
+                    <a href="${lead.slides}" target="_blank" class="btn-slides">Open Slides</a>
+                    <button class="btn-outline" style="height:24px; padding:0 5px;" onclick="window.editSlides('${lead.id}')" title="Edit Link">✏️</button>
+                </div>`;
+        } else {
+            slidesBtn = `<button class="btn-outline" onclick="window.editSlides('${lead.id}')">+ Slides</button>`;
+        }
+
         const deadBtn = lead.dead 
             ? `<button class="btn-revive" onclick="window.toggleDead('${lead.id}')">Revive Project</button>` 
             : `<button class="btn-dead" onclick="window.toggleDead('${lead.id}')">Mark Project Dead</button>`;
@@ -331,7 +343,12 @@ document.addEventListener('DOMContentLoaded', () => {
         recalculateScore(lead);
         renderList();
         renderDetails(lead);
+        
+        // WRITE: Remap 'notes' to 'Current Progress' for the Sheet
         const payload = { ...lead, ...lead.pipeline, action: 'update' };
+        payload['Current Progress'] = lead.notes;
+        delete payload.notes;
+
         try {
             const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
             if ((await res.json()).status === 'success') {
