@@ -1,8 +1,7 @@
+<script>
 document.addEventListener('DOMContentLoaded', () => {
-    // -------------------------------------------------------------
-    // CONFIGURATION
-    // -------------------------------------------------------------
-    const API_URL = 'https://script.google.com/macros/s/AKfycbwfk7m10QvJQe-tnjLDZpL2HWqBvZDbzJf4tWwHET1-mdjnA14F_D1D3Xyu_YAeaYG0QA/exec';
+    // --- API CONFIGURATION ---
+    const API_URL = "https://script.google.com/macros/s/AKfycbxSOcf_Tlmdxkrbe4nwnim9MEGeXZ5tcWsvdY_w2NrvQ8EetpglQG0fgsUA1A6nf-4rzA/exec";
     
     // STATE
     const state = {
@@ -30,28 +29,19 @@ document.addEventListener('DOMContentLoaded', () => {
         sortBtns: { prob: document.getElementById('sortProb'), name: document.getElementById('sortName') }
     };
 
-    // INITIALIZE
     init();
 
     function init() {
-        createPhaseFilter();
         fetchData();
         setupEventListeners();
-        setupGlobalFunctions(); // IMPORTANT: This fixes button clicks
-    }
-
-    function createPhaseFilter() {
-        const filterRow = document.querySelector('.filter-row');
-        if (filterRow && !document.getElementById('phaseFilter')) {
-            dom.phaseSelect = document.getElementById('phaseFilter');
-        }
+        setupGlobalFunctions(); 
     }
 
     // --- DATA FETCHING ---
     async function fetchData() {
         try {
             dom.listContainer.innerHTML = '<div class="loading-state"><span>🔄</span><span>Loading Pipeline...</span></div>';
-            const response = await fetch(API_URL);
+            const response = await fetch(API_URL + "?q=data");
             const data = await response.json();
             
             state.allLeads = data.map((item, index) => normalizeLead(item, index));
@@ -59,9 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
             populateFilters();
             applyFiltersAndSort();
             
-            // Restore selection if possible, else pick first
             if (state.selectedLeadId && state.filteredLeads.find(l => l.id === state.selectedLeadId)) {
-                // Just update details, don't re-render list
                 updateListHighlight(state.selectedLeadId);
                 renderDetails(state.allLeads.find(l => l.id === state.selectedLeadId));
             } else if (state.filteredLeads.length > 0) {
@@ -158,14 +146,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const matchesOrigin = originVal === 'all' || lead.origin === originVal;
             const matchesManager = managerVal === 'all' || lead.manager === managerVal;
             const matchesType = typeVal === 'all' || lead.type === typeVal || lead.type === 'both';
-            
             let matchesPhase = true;
             if (phaseVal !== 'all') {
                 if (phaseVal === 'p1' && lead.phase !== 1) matchesPhase = false;
                 if (phaseVal === 'p2' && lead.phase !== 2) matchesPhase = false;
                 if (phaseVal === 'p3' && lead.phase !== 3) matchesPhase = false;
             }
-
             let matchesStage = true;
             if (stageVal === 'contract' && !lead.pipeline.contract) matchesStage = false;
             if (stageVal === 'loi_signed' && !lead.pipeline.loi_signed) matchesStage = false;
@@ -197,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const deadClass = lead.dead ? 'is-dead' : `phase-${lead.phase}`;
             const iconContent = lead.dead ? '✕' : (lead.phase === 3 ? '★' : '📄');
             
-            row.id = `row-${lead.id}`; // Crucial for no-refresh selection
+            row.id = `row-${lead.id}`; 
             row.className = `lead-row ${deadClass} ${state.selectedLeadId === lead.id ? 'active' : ''}`;
             row.style.animationDelay = `${idx * 0.05}s`;
             row.onclick = () => selectLead(lead.id);
@@ -218,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- OPTIMIZED SELECTION (NO REFRESH) ---
+    // NO REFRESH SELECTION
     function selectLead(id) {
         state.selectedLeadId = id;
         updateListHighlight(id);
@@ -226,9 +212,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateListHighlight(id) {
-        // Remove active from all
         document.querySelectorAll('.lead-row').forEach(r => r.classList.remove('active'));
-        // Add active to current
         const row = document.getElementById(`row-${id}`);
         if (row) row.classList.add('active');
     }
@@ -237,15 +221,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!lead) return;
         const phase = lead.phase;
         
-        // ICONS
+        // ICONS & CONTENT
         const iconUser = `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`;
         const iconTarget = `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>`;
         const iconBriefcase = `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>`;
         const iconTruck = `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>`;
         const iconLink = `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>`;
 
-        // LOGIC FOR BUTTONS
-        const logoHtml = lead.logo ? `<img src="${lead.logo}" class="company-logo">` : `<div class="logo-placeholder">${lead.customer.charAt(0)}</div>`;
+        const logoHtml = lead.logo ? `<img src="${lead.logo}" class="company-logo" onclick="window.editLogo('${lead.id}')">` : `<div class="logo-placeholder" onclick="window.editLogo('${lead.id}')">${lead.customer.charAt(0)}</div>`;
         const slidesBtn = lead.slides 
             ? `<div style="display:flex;align-items:center;gap:5px"><a href="${lead.slides}" target="_blank" class="btn-slides">Open Slides</a><span class="edit-btn-mini" onclick="window.editSlides('${lead.id}')">✏️</span></div>` 
             : `<button class="btn-outline" style="height:28px" onclick="window.editSlides('${lead.id}')">+ Slides</button>`;
@@ -253,7 +236,6 @@ document.addEventListener('DOMContentLoaded', () => {
             ? `<a href="${lead.linkedin}" target="_blank" style="color:#0077b5; margin-left:5px;">${iconLink}</a>`
             : `<span style="cursor:pointer; opacity:0.3; margin-left:5px;" onclick="window.editLinkedIn('${lead.id}')">+</span>`;
 
-        // GENERATORS
         const createTeamCard = (icon, role, fieldKey, val, isDrop, opts) => `
             <div class="team-card">
                 <div class="team-icon-box">${icon}</div>
@@ -265,7 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div style="display:flex; align-items:center;">
                         <span class="team-name ${val?'':'unassigned'}">${val||'Unassigned'}</span>
                         <span class="edit-btn-mini" onclick="window.enableEdit('${lead.id}', '${fieldKey}', '${val||''}', ${isDrop}, '${opts.join('|')}')">✎</span>
-                        <div id="field-${fieldKey}" style="display:none"></div>
+                        <div id="field-${fieldKey}" style="display:none"></div> 
                     </div>
                 </div>
             </div>`;
@@ -280,12 +262,11 @@ document.addEventListener('DOMContentLoaded', () => {
             ? `<button class="btn-block-revive" onclick="window.toggleDead('${lead.id}')">♻️ Revive Project</button>` 
             : `<button class="btn-danger btn-block-danger" onclick="window.toggleDead('${lead.id}')">✕ Mark as Dead</button>`;
 
-        // RENDER DETAILS HTML
         dom.detailsPanel.innerHTML = `
             <div class="detail-card phase-${phase} ${lead.dead ? 'is-dead' : ''}">
                 <div class="detail-header-top">
                     <div style="display:flex; align-items:center; gap:20px;">
-                        <div onclick="window.editLogo('${lead.id}')">${logoHtml}</div>
+                        ${logoHtml}
                         <div class="customer-title">
                             <h2>${lead.customer}</h2>
                             <div class="detail-tags">${lead.tags.map(t=>`<span class="tag tag-${t.type}">${t.text}</span>`).join('')}</div>
@@ -356,13 +337,13 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
-    // --- ACTIONS & API ---
+    // --- GLOBAL ACTIONS ---
     async function saveLeadData(lead) {
         const btn = dom.saveBtn;
         btn.innerText = 'Saving...';
         recalculateScore(lead);
         
-        // Update list visually without reload
+        // Optimistic UI Update (No refresh)
         const row = document.getElementById(`row-${lead.id}`);
         if(row) {
             row.querySelector('.win-prob').innerText = lead.dead ? 'DEAD' : `${lead.progress}%`;
@@ -371,7 +352,8 @@ document.addEventListener('DOMContentLoaded', () => {
         renderDetails(lead);
         
         const payload = { ...lead, ...lead.pipeline, action: 'update' };
-        payload['Current Progress'] = lead.notes; delete payload.notes;
+        payload['Current Progress'] = lead.notes;
+        delete payload.notes;
 
         try {
             await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
@@ -381,7 +363,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) { btn.innerText = 'Error'; }
     }
 
-    // --- GLOBAL FUNCTIONS (EXPOSED TO WINDOW) ---
     function setupGlobalFunctions() {
         window.toggleDead = (id) => { const l = state.allLeads.find(x=>x.id===id); if(l){ l.dead=!l.dead; saveLeadData(l); } };
         window.togglePipeline = (id, key) => { const l = state.allLeads.find(x=>x.id===id); if(l){ l.pipeline[key]=!l.pipeline[key]; saveLeadData(l); } };
@@ -430,7 +411,6 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // --- EVENT LISTENERS ---
     function setupEventListeners() { 
         dom.refreshBtn.addEventListener('click', fetchData);
         dom.sortBtns.prob.addEventListener('click', () => setSort('score', 'desc'));
@@ -441,8 +421,9 @@ document.addEventListener('DOMContentLoaded', () => {
         dom.managerSelect.addEventListener('change', applyFiltersAndSort);
         dom.stageSelect.addEventListener('change', applyFiltersAndSort);
         dom.searchInput.addEventListener('input', applyFiltersAndSort);
+        
         dom.addLeadBtn.onclick = async () => {
-            const name = prompt("Name:"); if(!name) return;
+            const name = prompt("New Customer Name:"); if(!name) return;
             dom.addLeadBtn.innerText = '...';
             await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'create', customer: name }) });
             alert('Created'); dom.addLeadBtn.innerText = '+ Add Lead'; fetchData();
@@ -458,3 +439,4 @@ document.addEventListener('DOMContentLoaded', () => {
         dom.originSelect.innerHTML = '<option value="all">All Origins</option>' + origins.map(o=>`<option value="${o}">${o}</option>`).join('');
     }
 });
+</script>
