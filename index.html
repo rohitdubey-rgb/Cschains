@@ -2,10 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Leads Dashboard</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <?!= include('CSS'); ?>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
 
@@ -16,15 +15,10 @@
                 <div><h1>Leads Dashboard</h1></div>
             </div>
             <div class="header-actions">
-                <a href="https://docs.google.com/spreadsheets/d/1KjBMOmjl73pf2ZF6ZQHlvLBHHV3VlpO38UUhbTpmBzU/edit" target="_blank" class="btn-outline" style="text-decoration:none; color:var(--text-dark);">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                    Sheet
-                </a>
-
-                <button class="btn btn-primary" id="globalSaveBtn">Save Changes</button>
-                <button class="btn btn-outline" id="addLeadBtn" style="color:var(--primary); border-color:var(--primary);">+ Add Lead</button>
-                <button class="btn btn-outline" id="refreshBtn">Refresh</button>
-                <button class="btn btn-outline" id="exportBtn">Export</button>
+                <a href="https://docs.google.com/spreadsheets/d/1KjBMOmjl73pf2ZF6ZQHlvLBHHV3VlpO38UUhbTpmBzU/edit" target="_blank" class="btn-outline" style="text-decoration:none;">Sheet</a>
+                <button class="btn-primary" id="globalSaveBtn">Save Changes</button>
+                <button class="btn-outline" id="addLeadBtn">+ Add Lead</button>
+                <button class="btn-outline" id="refreshBtn">Refresh</button>
             </div>
         </header>
 
@@ -33,32 +27,12 @@
                 <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                 <input type="text" id="searchInput" placeholder="Search...">
             </div>
-            <div class="filter-row">
-                <select id="phaseFilter" class="filter-select">
-                    <option value="all">All Phases</option>
-                    <option value="p1">Phase 1: Exploration</option>
-                    <option value="p2">Phase 2: Validation</option>
-                    <option value="p3">Phase 3: Execution</option>
-                </select>
-
+            <div class="filter-row" style="display:flex; gap:10px;">
+                <select id="phaseFilter" class="filter-select"><option value="all">All Phases</option><option value="p1">Phase 1: Exploration</option><option value="p2">Phase 2: Validation</option><option value="p3">Phase 3: Execution</option></select>
                 <select id="originSelect" class="filter-select"><option value="all">Origin</option></select>
-                
-                <select id="typeSelect" class="filter-select">
-                    <option value="all">Type</option>
-                    <option value="pim">PIM</option>
-                    <option value="cm">CM</option>
-                    <option value="both">Both</option>
-                </select>
-                
+                <select id="typeSelect" class="filter-select"><option value="all">Type</option><option value="pim">PIM</option><option value="cm">CM</option><option value="both">Both</option></select>
                 <select id="managerSelect" class="filter-select"><option value="all">Manager</option></select>
-                
-                <select id="stageSelect" class="filter-select">
-                    <option value="all">Pipeline Stage</option>
-                    <option value="contract">Contract Signed</option>
-                    <option value="loi_signed">LOI Signed</option>
-                    <option value="loi_issued">LOI Issued</option>
-                    <option value="intro">Intro Meeting</option>
-                </select>
+                <select id="stageSelect" class="filter-select"><option value="all">Pipeline Stage</option><option value="contract">Contract Signed</option><option value="loi_signed">LOI Signed</option><option value="intro">Intro Meeting</option></select>
             </div>
         </section>
 
@@ -72,7 +46,7 @@
                     </div>
                 </div>
                 <div id="leadsListContainer" class="leads-list">
-                    <div class="loading-state">Loading...</div>
+                    <div class="loading-state"><span>🔄</span><span>Loading...</span></div>
                 </div>
             </aside>
 
@@ -82,6 +56,6 @@
         </main>
     </div>
 
-    <script src="app.js"></script>
+    <?!= include('JS'); ?>
 </body>
 </html>
