@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // -------------------------------------------------------------
     // CONFIGURATION
     // -------------------------------------------------------------
-    const API_URL = 'https://script.google.com/macros/s/AKfycbyOUM7C6Qh1g_o1wmNXDM0wggHxjAxKj_y7GKPEzfcGy4SRlAiphJMISu1WUE1X2CPfyw/exec';
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwSnZ1254c9CnQ4O54jbzAAE-1NFMKa8hWRVYADjA2qLbJsw50xPmPVZ7gMoB_4TcTnKw/exec';
     
     // STATE
     const state = {
