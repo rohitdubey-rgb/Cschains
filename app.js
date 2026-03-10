@@ -448,8 +448,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                             <div class="chat-bubble" style="background:${c.bg}; border-color:${c.border}">
                                                 <div class="chat-text">${formatNoteContent(note.content)}</div>
                                                 <div class="bubble-actions">
-                                                    <button class="bubble-btn" onclick="window.editNote('${lead.id}', ${origIdx})" title="Edit">✎</button>
-                                                    <button class="bubble-btn" onclick="window.showNoteMailPanel('${lead.id}', ${origIdx})" title="Email this note">✉</button>
+                                                    <button class="bubble-btn edit-btn" onclick="window.editNote('${lead.id}', ${origIdx})" title="Edit">✏</button>
+                                                    <button class="bubble-btn delete-btn" onclick="window.deleteNote('${lead.id}', ${origIdx})" title="Delete">🗑</button>
+                                                    <button class="bubble-btn mail-btn" onclick="window.showNoteMailPanel('${lead.id}', ${origIdx})" title="Email this note">✉</button>
                                                 </div>
                                             </div>
                                             <div class="note-mail-panel" id="mail-panel-${origIdx}" style="display:none">
@@ -567,6 +568,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 btn.textContent = 'Error';
                 btn.disabled = false;
             }
+        };
+
+        window.deleteNote = (leadId, noteIdx) => {
+            const l = state.allLeads.find(x => x.id === leadId);
+            if (!l) return;
+            const parsed = parseNotes(l.notes);
+            parsed.splice(noteIdx, 1);
+            l.notes = parsed.length > 0 ? serializeNotes(parsed) : '';
+            saveLeadData(l);
         };
 
         window.showNoteMailPanel = (leadId, noteIdx) => {

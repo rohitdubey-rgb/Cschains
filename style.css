@@ -284,19 +284,21 @@ body {
 .chat-text em { font-style: italic; color: var(--text-secondary); }
 .chat-time { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.03em; padding-left: 4px; }
 
-/* Bubble action buttons (edit + mail) */
-.chat-bubble { position: relative; padding-right: 52px; }
+/* Bubble action buttons (edit / delete / mail) */
+.chat-bubble { position: relative; padding-right: 8px; padding-bottom: 32px; }
 .bubble-actions {
-    display: none; position: absolute; top: 7px; right: 8px;
-    flex-direction: row; gap: 3px;
+    position: absolute; bottom: 8px; right: 10px;
+    display: flex; flex-direction: row; gap: 5px;
 }
-.chat-bubble:hover .bubble-actions { display: flex; }
 .bubble-btn {
-    background: none; border: none; cursor: pointer; font-size: 0.75rem;
-    color: var(--text-tertiary); padding: 2px 3px; line-height: 1; border-radius: 3px;
-    transition: color 0.15s, background 0.15s;
+    width: 26px; height: 26px; border-radius: 6px; border: none;
+    cursor: pointer; font-size: 0.85rem; display: flex; align-items: center;
+    justify-content: center; transition: transform 0.1s, filter 0.1s;
 }
-.bubble-btn:hover { color: var(--primary); background: rgba(37,99,235,0.08); }
+.bubble-btn:hover { transform: scale(1.15); filter: brightness(0.88); }
+.bubble-btn.edit-btn   { background: #dbeafe; color: #1d4ed8; }
+.bubble-btn.delete-btn { background: #fee2e2; color: #b91c1c; }
+.bubble-btn.mail-btn   { background: #dcfce7; color: #15803d; }
 
 /* Inline edit mode */
 .note-edit-textarea {
