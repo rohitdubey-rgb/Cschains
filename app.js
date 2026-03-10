@@ -429,9 +429,31 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="col-right">
                         <div class="section-head">Progress Notes / Next Steps</div>
                         <div class="notes-container">
-                            <textarea id="notesArea" class="notes-editor" placeholder="Type notes here...">${lead.notes}</textarea>
-                            <div class="notes-actions">
-                                <button class="btn-primary" onclick="window.saveNotes()">Save Note</button>
+                            <div class="notes-input-area">
+                                <div class="notes-toolbar">
+                                    <button class="toolbar-btn" onclick="window.noteFormat('bold')" title="Bold"><b>B</b></button>
+                                    <button class="toolbar-btn" onclick="window.noteFormat('italic')" title="Italic"><i>I</i></button>
+                                    <button class="toolbar-btn" onclick="window.noteFormat('bullet')" title="Bullet">• List</button>
+                                    <button class="toolbar-btn" onclick="window.noteFormat('divider')" title="Divider">—</button>
+                                    <span class="toolbar-hint">Supports **bold**, _italic_, • bullets</span>
+                                </div>
+                                <textarea id="notesArea" class="notes-editor" placeholder="Add a new note..."></textarea>
+                                <div class="notes-actions">
+                                    <button class="btn-primary" onclick="window.saveNotes()">+ Add Note</button>
+                                </div>
+                            </div>
+                            <div class="notes-log">
+                                ${(() => {
+                                    const parsed = parseNotes(lead.notes);
+                                    if (parsed.length === 0) return '<div class="notes-empty">No notes yet. Add one above.</div>';
+                                    return parsed.map((note, i) => {
+                                        const c = NOTE_COLORS[i % NOTE_COLORS.length];
+                                        return `<div class="note-entry" style="background:${c.bg}; border-left:3px solid ${c.accent}">
+                                            <div class="note-date" style="color:${c.accent}">${formatNoteDate(note.date)}</div>
+                                            <div class="note-body">${formatNoteContent(note.content)}</div>
+                                        </div>`;
+                                    }).join('');
+                                })()}
                             </div>
                         </div>
                     </div>
@@ -465,7 +487,32 @@ document.addEventListener('DOMContentLoaded', () => {
         window.toggleSuccessful = (id) => { const l = state.allLeads.find(x=>x.id===id); if(l){ l.successful=!l.successful; if(l.successful) l.dead=false; saveLeadData(l); } };
         window.togglePipeline = (id, key) => { const l = state.allLeads.find(x=>x.id===id); if(l){ l.pipeline[key]=!l.pipeline[key]; saveLeadData(l); } };
         window.toggleTopStatus = (id, key) => { const l = state.allLeads.find(x=>x.id===id); if(l){ l[key]=!l[key]; saveLeadData(l); } };
-        window.saveNotes = () => { const l = state.allLeads.find(x=>x.id===state.selectedLeadId); if(l){ l.notes = document.getElementById('notesArea').value; saveLeadData(l); } };
+        window.saveNotes = () => {
+            const ta = document.getElementById('notesArea');
+            if (!ta || !ta.value.trim()) return;
+            const l = state.allLeads.find(x=>x.id===state.selectedLeadId);
+            if (l) {
+                const existing = parseNotes(l.notes);
+                const newEntry = { date: new Date(), content: ta.value.trim() };
+                l.notes = serializeNotes([newEntry, ...existing]);
+                saveLeadData(l);
+            }
+        };
+
+        window.noteFormat = (type) => {
+            const ta = document.getElementById('notesArea');
+            if (!ta) return;
+            const start = ta.selectionStart, end = ta.selectionEnd;
+            const selected = ta.value.substring(start, end);
+            let rep = '';
+            if (type === 'bold')    rep = `**${selected || 'bold text'}**`;
+            if (type === 'italic')  rep = `_${selected || 'italic text'}_`;
+            if (type === 'bullet')  rep = (start > 0 ? '\n' : '') + `• ${selected || 'item'}`;
+            if (type === 'divider') rep = (start > 0 ? '\n' : '') + '---\n';
+            ta.value = ta.value.substring(0, start) + rep + ta.value.substring(end);
+            ta.selectionStart = ta.selectionEnd = start + rep.length;
+            ta.focus();
+        };
         
         window.enableEdit = (id, field, val, isDropdown, opts) => {
             const container = document.querySelector(`.team-card #field-${field}`).parentElement; 
