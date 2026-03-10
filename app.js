@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
         allLeads: [],
         filteredLeads: [],
         selectedLeadId: null,
+        users: [],
         dropdowns: { managers: [], strategic: [], delivery: [] },
         sort: { field: 'score', direction: 'desc' }
     };
@@ -53,8 +54,11 @@ document.addEventListener('DOMContentLoaded', () => {
             dom.listContainer.innerHTML = '<div class="loading-state"><span>🔄</span><span>Loading Pipeline...</span></div>';
             const response = await fetch(API_URL);
             const data = await response.json();
-            
-            state.allLeads = data.map((item, index) => normalizeLead(item, index));
+
+            // Support both legacy array format and new { leads, users } format
+            const leadsData = Array.isArray(data) ? data : (data.leads || []);
+            state.users = Array.isArray(data) ? [] : (data.users || []);
+            state.allLeads = leadsData.map((item, index) => normalizeLead(item, index));
             extractDropdownOptions();
             populateFilters();
             applyFiltersAndSort();
@@ -428,17 +432,31 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
 
                     <div class="col-right">
-                        <div class="section-head">Progress Notes / Next Steps</div>
+                        <div class="notes-section-head">
+                            <span>Progress Notes / Next Steps</span>
+                            <div class="mail-wrapper">
+                                <button class="mail-icon-btn" onclick="window.toggleMailDropdown()" title="Email notes to someone">✉</button>
+                                <div class="mail-popover" id="mailPopover">
+                                    <select id="mailUserSelect" class="mail-select">
+                                        <option value="">Select recipient…</option>
+                                        ${state.users.map(u => `<option value="${u.email}">${u.name}</option>`).join('')}
+                                    </select>
+                                    <button class="mail-send-btn" id="mailSendBtn" onclick="window.sendNotesEmail('${lead.id}')">Send</button>
+                                </div>
+                            </div>
+                        </div>
                         <div class="notes-container">
                             <div class="notes-log" id="notesLog">
                                 ${(() => {
                                     const parsed = parseNotes(lead.notes);
                                     if (parsed.length === 0) return '<div class="notes-empty">No notes yet — type one below and press Enter.</div>';
-                                    return [...parsed].reverse().map((note, i) => {
+                                    // Map with original index, then reverse for chat order (oldest at top)
+                                    return parsed.map((note, origIdx) => ({ note, origIdx })).reverse().map(({ note, origIdx }, i) => {
                                         const c = NOTE_COLORS[i % NOTE_COLORS.length];
-                                        return `<div class="chat-msg">
+                                        return `<div class="chat-msg" id="chat-note-${origIdx}" data-raw="${encodeURIComponent(note.content)}">
                                             <div class="chat-bubble" style="background:${c.bg}; border-color:${c.border}">
                                                 <div class="chat-text">${formatNoteContent(note.content)}</div>
+                                                <button class="note-edit-btn" onclick="window.editNote('${lead.id}', ${origIdx})" title="Edit">✎</button>
                                             </div>
                                             <div class="chat-time" style="color:${c.accent}">${formatNoteDate(note.date)}</div>
                                         </div>`;
@@ -448,6 +466,12 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div class="notes-input-bar">
                                 <input type="text" id="notesArea" class="notes-chat-input" placeholder="Type a note and press Enter..."
                                     onkeydown="if(event.key==='Enter' && this.value.trim()) window.saveNotes()">
+                                <div class="fmt-btns">
+                                    <button class="fmt-btn" onclick="window.noteFormat('bold')" title="Bold"><b>B</b></button>
+                                    <button class="fmt-btn" onclick="window.noteFormat('italic')" title="Italic"><i>I</i></button>
+                                    <button class="fmt-btn" onclick="window.noteFormat('bullet')" title="Bullet">•</button>
+                                    <button class="fmt-btn" onclick="window.noteFormat('divider')" title="Divider">—</button>
+                                </div>
                                 <button class="notes-send-btn" onclick="window.saveNotes()">↑</button>
                             </div>
                         </div>
@@ -497,6 +521,84 @@ document.addEventListener('DOMContentLoaded', () => {
                 l.notes = serializeNotes([newEntry, ...existing]);
                 saveLeadData(l);
             }
+        };
+
+        window.toggleMailDropdown = () => {
+            const p = document.getElementById('mailPopover');
+            if (p) p.classList.toggle('open');
+        };
+
+        window.sendNotesEmail = async (leadId) => {
+            const sel = document.getElementById('mailUserSelect');
+            const btn = document.getElementById('mailSendBtn');
+            if (!sel || !sel.value) { sel.focus(); return; }
+            const l = state.allLeads.find(x => x.id === leadId);
+            if (!l) return;
+            btn.textContent = 'Sending…';
+            btn.disabled = true;
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'sendEmail',
+                        customer: l.customer,
+                        notes: l.notes,
+                        recipientEmail: sel.value,
+                        recipientName: sel.options[sel.selectedIndex].text
+                    })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    btn.textContent = '✓ Sent';
+                    setTimeout(() => {
+                        const p = document.getElementById('mailPopover');
+                        if (p) p.classList.remove('open');
+                        btn.textContent = 'Send';
+                        btn.disabled = false;
+                        sel.value = '';
+                    }, 1800);
+                } else {
+                    btn.textContent = 'Error';
+                    btn.disabled = false;
+                }
+            } catch (e) {
+                btn.textContent = 'Error';
+                btn.disabled = false;
+            }
+        };
+
+        window.editNote = (leadId, noteIdx) => {
+            const msgEl = document.getElementById(`chat-note-${noteIdx}`);
+            if (!msgEl) return;
+            const bubble = msgEl.querySelector('.chat-bubble');
+            const rawContent = decodeURIComponent(msgEl.dataset.raw);
+            bubble.innerHTML = `
+                <textarea class="note-edit-textarea" id="note-edit-inp-${noteIdx}"></textarea>
+                <div class="note-edit-actions">
+                    <button class="note-edit-save" onclick="window.saveNoteEdit('${leadId}', ${noteIdx})">Save</button>
+                    <button class="note-edit-cancel" onclick="window.cancelNoteEdit('${leadId}', ${noteIdx})">Cancel</button>
+                </div>`;
+            const ta = document.getElementById(`note-edit-inp-${noteIdx}`);
+            ta.value = rawContent;
+            ta.focus();
+            ta.setSelectionRange(ta.value.length, ta.value.length);
+        };
+
+        window.saveNoteEdit = (leadId, noteIdx) => {
+            const ta = document.getElementById(`note-edit-inp-${noteIdx}`);
+            if (!ta) return;
+            const l = state.allLeads.find(x => x.id === leadId);
+            if (!l) return;
+            const parsed = parseNotes(l.notes);
+            if (!parsed[noteIdx]) return;
+            parsed[noteIdx].content = ta.value.trim();
+            l.notes = serializeNotes(parsed);
+            saveLeadData(l);
+        };
+
+        window.cancelNoteEdit = (leadId, noteIdx) => {
+            const l = state.allLeads.find(x => x.id === leadId);
+            if (l) renderDetails(l);
         };
 
         window.noteFormat = (type) => {
