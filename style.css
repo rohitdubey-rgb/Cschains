@@ -284,31 +284,61 @@ body {
 .chat-text em { font-style: italic; color: var(--text-secondary); }
 .chat-time { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.03em; padding-left: 4px; }
 
-/* Edit button inside bubble */
-.note-edit-btn {
-    display: none; position: absolute; top: 6px; right: 8px;
-    background: none; border: none; cursor: pointer; font-size: 0.75rem;
-    color: var(--text-tertiary); padding: 0; line-height: 1;
+/* Bubble action buttons (edit + mail) */
+.chat-bubble { position: relative; padding-right: 52px; }
+.bubble-actions {
+    display: none; position: absolute; top: 7px; right: 8px;
+    flex-direction: row; gap: 3px;
 }
-.chat-bubble { position: relative; }
-.chat-bubble:hover .note-edit-btn { display: block; }
-.note-edit-btn:hover { color: var(--primary); }
+.chat-bubble:hover .bubble-actions { display: flex; }
+.bubble-btn {
+    background: none; border: none; cursor: pointer; font-size: 0.75rem;
+    color: var(--text-tertiary); padding: 2px 3px; line-height: 1; border-radius: 3px;
+    transition: color 0.15s, background 0.15s;
+}
+.bubble-btn:hover { color: var(--primary); background: rgba(37,99,235,0.08); }
 
 /* Inline edit mode */
 .note-edit-textarea {
-    width: 100%; min-height: 60px; padding: 6px 8px; border: 1px solid var(--primary);
-    border-radius: 6px; font-family: inherit; font-size: 0.88rem; line-height: 1.5;
+    width: 100%; min-height: 120px; padding: 10px 12px; border: 1px solid var(--primary);
+    border-radius: 8px; font-family: inherit; font-size: 0.9rem; line-height: 1.6;
     resize: vertical; outline: none; background: white;
+    box-shadow: 0 0 0 3px var(--primary-light);
 }
-.note-edit-actions { display: flex; gap: 6px; margin-top: 6px; }
+.note-edit-actions { display: flex; gap: 6px; margin-top: 8px; }
 .note-edit-save {
-    padding: 3px 10px; border-radius: 5px; border: none; background: var(--primary);
-    color: white; font-size: 0.75rem; font-weight: 600; cursor: pointer;
+    padding: 5px 14px; border-radius: 6px; border: none; background: var(--primary);
+    color: white; font-size: 0.8rem; font-weight: 600; cursor: pointer;
 }
 .note-edit-cancel {
-    padding: 3px 10px; border-radius: 5px; border: 1px solid var(--border);
-    background: white; color: var(--text-secondary); font-size: 0.75rem; cursor: pointer;
+    padding: 5px 14px; border-radius: 6px; border: 1px solid var(--border);
+    background: white; color: var(--text-secondary); font-size: 0.8rem; cursor: pointer;
 }
+
+/* Per-note mail panel */
+.note-mail-panel {
+    display: none; align-items: center; gap: 6px;
+    margin-top: 6px; padding: 8px 10px;
+    background: white; border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: var(--shadow-sm); max-width: 88%;
+}
+.mail-panel-select {
+    flex: 1; height: 28px; padding: 0 8px; border: 1px solid var(--border);
+    border-radius: 6px; font-size: 0.78rem; color: var(--text-main);
+    background: var(--bg-app); cursor: pointer; min-width: 0;
+}
+.mail-panel-send {
+    height: 28px; padding: 0 12px; border-radius: 6px; border: none;
+    background: var(--primary); color: white; font-size: 0.78rem; font-weight: 600;
+    cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: background 0.15s;
+}
+.mail-panel-send:hover:not(:disabled) { background: var(--primary-dark); }
+.mail-panel-send:disabled { opacity: 0.6; cursor: not-allowed; }
+.mail-panel-close {
+    background: none; border: none; cursor: pointer; color: var(--text-tertiary);
+    font-size: 0.8rem; padding: 2px 4px; flex-shrink: 0; border-radius: 3px;
+}
+.mail-panel-close:hover { color: var(--text-main); }
 
 /* Input bar */
 .notes-input-bar {

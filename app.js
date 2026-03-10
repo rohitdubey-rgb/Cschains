@@ -434,16 +434,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="col-right">
                         <div class="notes-section-head">
                             <span>Progress Notes / Next Steps</span>
-                            <div class="mail-wrapper">
-                                <button class="mail-icon-btn" onclick="window.toggleMailDropdown()" title="Email notes to someone">✉</button>
-                                <div class="mail-popover" id="mailPopover">
-                                    <select id="mailUserSelect" class="mail-select">
-                                        <option value="">Select recipient…</option>
-                                        ${state.users.map(u => `<option value="${u.email}">${u.name}</option>`).join('')}
-                                    </select>
-                                    <button class="mail-send-btn" id="mailSendBtn" onclick="window.sendNotesEmail('${lead.id}')">Send</button>
-                                </div>
-                            </div>
                         </div>
                         <div class="notes-container">
                             <div class="notes-log" id="notesLog">
@@ -453,10 +443,22 @@ document.addEventListener('DOMContentLoaded', () => {
                                     // Map with original index, then reverse for chat order (oldest at top)
                                     return parsed.map((note, origIdx) => ({ note, origIdx })).reverse().map(({ note, origIdx }, i) => {
                                         const c = NOTE_COLORS[i % NOTE_COLORS.length];
+                                        const userOpts = state.users.map(u => `<option value="${u.email}">${u.name}</option>`).join('');
                                         return `<div class="chat-msg" id="chat-note-${origIdx}" data-raw="${encodeURIComponent(note.content)}">
                                             <div class="chat-bubble" style="background:${c.bg}; border-color:${c.border}">
                                                 <div class="chat-text">${formatNoteContent(note.content)}</div>
-                                                <button class="note-edit-btn" onclick="window.editNote('${lead.id}', ${origIdx})" title="Edit">✎</button>
+                                                <div class="bubble-actions">
+                                                    <button class="bubble-btn" onclick="window.editNote('${lead.id}', ${origIdx})" title="Edit">✎</button>
+                                                    <button class="bubble-btn" onclick="window.showNoteMailPanel('${lead.id}', ${origIdx})" title="Email this note">✉</button>
+                                                </div>
+                                            </div>
+                                            <div class="note-mail-panel" id="mail-panel-${origIdx}" style="display:none">
+                                                <select class="mail-panel-select" id="mail-panel-sel-${origIdx}">
+                                                    <option value="">Select recipient…</option>
+                                                    ${userOpts}
+                                                </select>
+                                                <button class="mail-panel-send" id="mail-panel-btn-${origIdx}" onclick="window.sendSingleNote('${lead.id}', ${origIdx})">Send</button>
+                                                <button class="mail-panel-close" onclick="document.getElementById('mail-panel-${origIdx}').style.display='none'">✕</button>
                                             </div>
                                             <div class="chat-time" style="color:${c.accent}">${formatNoteDate(note.date)}</div>
                                         </div>`;
@@ -565,6 +567,38 @@ document.addEventListener('DOMContentLoaded', () => {
                 btn.textContent = 'Error';
                 btn.disabled = false;
             }
+        };
+
+        window.showNoteMailPanel = (leadId, noteIdx) => {
+            // Close any other open panels first
+            document.querySelectorAll('.note-mail-panel').forEach(p => p.style.display = 'none');
+            const panel = document.getElementById(`mail-panel-${noteIdx}`);
+            if (panel) { panel.style.display = 'flex'; document.getElementById(`mail-panel-sel-${noteIdx}`)?.focus(); }
+        };
+
+        window.sendSingleNote = async (leadId, noteIdx) => {
+            const sel = document.getElementById(`mail-panel-sel-${noteIdx}`);
+            const btn = document.getElementById(`mail-panel-btn-${noteIdx}`);
+            if (!sel || !sel.value) { sel?.focus(); return; }
+            const l = state.allLeads.find(x => x.id === leadId);
+            if (!l) return;
+            const parsed = parseNotes(l.notes);
+            const note = parsed[noteIdx];
+            if (!note) return;
+            btn.textContent = 'Sending…'; btn.disabled = true;
+            try {
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({
+                    action: 'sendEmail', customer: l.customer,
+                    notes: serializeNotes([note]),
+                    recipientEmail: sel.value,
+                    recipientName: sel.options[sel.selectedIndex].text
+                })});
+                const result = await res.json();
+                if (result.success) {
+                    btn.textContent = '✓ Sent';
+                    setTimeout(() => { document.getElementById(`mail-panel-${noteIdx}`).style.display = 'none'; btn.textContent = 'Send'; btn.disabled = false; }, 1800);
+                } else { btn.textContent = 'Error'; btn.disabled = false; }
+            } catch(e) { btn.textContent = 'Error'; btn.disabled = false; }
         };
 
         window.editNote = (leadId, noteIdx) => {
