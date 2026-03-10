@@ -171,11 +171,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function serializeNotes(notes) {
-        return notes.map(n => `${n.date.toISOString()}|||${n.content}`).join('\n===\n');
+        // Use epoch (Jan 1 1970) as placeholder for legacy notes with no date
+        return notes.map(n => `${(n.date || new Date(0)).toISOString()}|||${n.content}`).join('\n===\n');
     }
 
     function formatNoteDate(date) {
-        if (!date) return 'Legacy Note';
+        if (!date || date.getTime() === 0) return 'Legacy Note';
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
     }
 
@@ -429,37 +430,34 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="col-right">
                         <div class="section-head">Progress Notes / Next Steps</div>
                         <div class="notes-container">
-                            <div class="notes-input-area">
-                                <div class="notes-toolbar">
-                                    <button class="toolbar-btn" onclick="window.noteFormat('bold')" title="Bold"><b>B</b></button>
-                                    <button class="toolbar-btn" onclick="window.noteFormat('italic')" title="Italic"><i>I</i></button>
-                                    <button class="toolbar-btn" onclick="window.noteFormat('bullet')" title="Bullet">• List</button>
-                                    <button class="toolbar-btn" onclick="window.noteFormat('divider')" title="Divider">—</button>
-                                    <span class="toolbar-hint">Supports **bold**, _italic_, • bullets</span>
-                                </div>
-                                <textarea id="notesArea" class="notes-editor" placeholder="Add a new note..."></textarea>
-                                <div class="notes-actions">
-                                    <button class="btn-primary" onclick="window.saveNotes()">+ Add Note</button>
-                                </div>
-                            </div>
-                            <div class="notes-log">
+                            <div class="notes-log" id="notesLog">
                                 ${(() => {
                                     const parsed = parseNotes(lead.notes);
-                                    if (parsed.length === 0) return '<div class="notes-empty">No notes yet. Add one above.</div>';
-                                    return parsed.map((note, i) => {
+                                    if (parsed.length === 0) return '<div class="notes-empty">No notes yet — type one below and press Enter.</div>';
+                                    return [...parsed].reverse().map((note, i) => {
                                         const c = NOTE_COLORS[i % NOTE_COLORS.length];
-                                        return `<div class="note-entry" style="background:${c.bg}; border-left:3px solid ${c.accent}">
-                                            <div class="note-date" style="color:${c.accent}">${formatNoteDate(note.date)}</div>
-                                            <div class="note-body">${formatNoteContent(note.content)}</div>
+                                        return `<div class="chat-msg">
+                                            <div class="chat-bubble" style="background:${c.bg}; border-color:${c.border}">
+                                                <div class="chat-text">${formatNoteContent(note.content)}</div>
+                                            </div>
+                                            <div class="chat-time" style="color:${c.accent}">${formatNoteDate(note.date)}</div>
                                         </div>`;
                                     }).join('');
                                 })()}
+                            </div>
+                            <div class="notes-input-bar">
+                                <input type="text" id="notesArea" class="notes-chat-input" placeholder="Type a note and press Enter..."
+                                    onkeydown="if(event.key==='Enter' && this.value.trim()) window.saveNotes()">
+                                <button class="notes-send-btn" onclick="window.saveNotes()">↑</button>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         `;
+        // Scroll notes log to bottom (newest message visible)
+        const notesLog = document.getElementById('notesLog');
+        if (notesLog) notesLog.scrollTop = notesLog.scrollHeight;
     }
 
     // --- ACTIONS & API ---
@@ -488,12 +486,14 @@ document.addEventListener('DOMContentLoaded', () => {
         window.togglePipeline = (id, key) => { const l = state.allLeads.find(x=>x.id===id); if(l){ l.pipeline[key]=!l.pipeline[key]; saveLeadData(l); } };
         window.toggleTopStatus = (id, key) => { const l = state.allLeads.find(x=>x.id===id); if(l){ l[key]=!l[key]; saveLeadData(l); } };
         window.saveNotes = () => {
-            const ta = document.getElementById('notesArea');
-            if (!ta || !ta.value.trim()) return;
+            const input = document.getElementById('notesArea');
+            if (!input || !input.value.trim()) return;
+            const text = input.value.trim();
+            input.value = '';
             const l = state.allLeads.find(x=>x.id===state.selectedLeadId);
             if (l) {
                 const existing = parseNotes(l.notes);
-                const newEntry = { date: new Date(), content: ta.value.trim() };
+                const newEntry = { date: new Date(), content: text };
                 l.notes = serializeNotes([newEntry, ...existing]);
                 saveLeadData(l);
             }
