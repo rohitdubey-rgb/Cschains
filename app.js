@@ -87,6 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function recalculateScore(lead) {
         let score = 0;
         if (lead.dead) { lead.score=0; lead.progress=0; lead.phase=0; return; }
+        if (lead.successful) { lead.score=160; lead.progress=100; lead.phase=3; return; }
         
         if (lead.intro) score += 10;
         if (lead.weekly) score += 5;
@@ -116,6 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
             id: `lead-${index}`,
             customer: getValue('Customer') || getValue('Company') || 'Unknown',
             dead: checkBool('Dead') || checkBool('Inactive'),
+            successful: checkBool('Successful') || checkBool('Client'),
             logo: getValue('Logo URL') || getValue('Logo') || '',
             linkedin: getValue('LinkedIn') || getValue('Social') || '',
             slides: getValue('Slides URL') || getValue('Slides') || '',
@@ -144,6 +146,49 @@ document.addEventListener('DOMContentLoaded', () => {
         return lead;
     }
 
+    // --- NOTES UTILITIES ---
+    const NOTE_COLORS = [
+        { bg: '#eff6ff', border: '#93c5fd', accent: '#2563eb' },
+        { bg: '#faf5ff', border: '#ddd6fe', accent: '#7c3aed' },
+        { bg: '#fff7ed', border: '#fed7aa', accent: '#ea580c' },
+        { bg: '#f0fdf4', border: '#bbf7d0', accent: '#16a34a' },
+        { bg: '#fdf4ff', border: '#f0abfc', accent: '#a21caf' },
+    ];
+
+    function parseNotes(notesStr) {
+        if (!notesStr) return [];
+        if (notesStr.includes('|||')) {
+            return notesStr.split('\n===\n').map(entry => {
+                const sepIdx = entry.indexOf('|||');
+                if (sepIdx === -1) return null;
+                const dateStr = entry.substring(0, sepIdx);
+                const content = entry.substring(sepIdx + 3);
+                return { date: new Date(dateStr), content };
+            }).filter(Boolean);
+        }
+        // Legacy plain text — treat as a single undated entry
+        return [{ date: null, content: notesStr }];
+    }
+
+    function serializeNotes(notes) {
+        return notes.map(n => `${n.date.toISOString()}|||${n.content}`).join('\n===\n');
+    }
+
+    function formatNoteDate(date) {
+        if (!date) return 'Legacy Note';
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
+    }
+
+    function formatNoteContent(raw) {
+        return raw
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/_(.*?)_/g, '<em>$1</em>')
+            .replace(/^---$/gm, '<hr class="note-hr">')
+            .replace(/^[•\-] (.+)$/gm, '<div class="note-bullet"><span>•</span><span>$1</span></div>')
+            .replace(/\n/g, '<br>');
+    }
+
     // --- FILTERING ---
     function applyFiltersAndSort() {
         const query = dom.searchInput.value.toLowerCase();
@@ -158,7 +203,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const matchesOrigin = originVal === 'all' || lead.origin === originVal;
             const matchesManager = managerVal === 'all' || lead.manager === managerVal;
             const matchesType = typeVal === 'all' || lead.type === typeVal || lead.type === 'both';
-            
+            const baseFilters = matchesSearch && matchesOrigin && matchesManager && matchesType;
+
+            // Dead and successful leads bypass phase/stage filters
+            if (lead.dead || lead.successful) return baseFilters;
+
             let matchesPhase = true;
             if (phaseVal !== 'all') {
                 if (phaseVal === 'p1' && lead.phase !== 1) matchesPhase = false;
@@ -172,7 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (stageVal === 'loi_issued' && !lead.pipeline.loi_issued) matchesStage = false;
             if (stageVal === 'intro' && !lead.intro) matchesStage = false;
 
-            return matchesSearch && matchesOrigin && matchesManager && matchesPhase && matchesStage && matchesType;
+            return baseFilters && matchesPhase && matchesStage;
         });
 
         const { field, direction } = state.sort;
@@ -189,33 +238,60 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderList() {
         dom.listContainer.innerHTML = '';
-        dom.listCount.innerText = state.filteredLeads.length;
-        if (state.filteredLeads.length === 0) { dom.listContainer.innerHTML = '<div class="empty-state">No leads match.</div>'; return; }
+        const activeLeads = state.filteredLeads.filter(l => !l.dead && !l.successful);
+        const successfulLeads = state.filteredLeads.filter(l => l.successful);
+        const deadLeads = state.filteredLeads.filter(l => l.dead);
+        const total = activeLeads.length + successfulLeads.length + deadLeads.length;
+        dom.listCount.innerText = total;
+        if (total === 0) { dom.listContainer.innerHTML = '<div class="empty-state">No leads match.</div>'; return; }
 
-        state.filteredLeads.forEach((lead, idx) => {
-            const row = document.createElement('div');
-            const deadClass = lead.dead ? 'is-dead' : `phase-${lead.phase}`;
-            const iconContent = lead.dead ? '✕' : (lead.phase === 3 ? '★' : '📄');
-            
-            row.id = `row-${lead.id}`; // Crucial for no-refresh selection
-            row.className = `lead-row ${deadClass} ${state.selectedLeadId === lead.id ? 'active' : ''}`;
-            row.style.animationDelay = `${idx * 0.05}s`;
-            row.onclick = () => selectLead(lead.id);
+        let globalIdx = 0;
+        const renderSection = (leads, title) => {
+            if (leads.length === 0) return;
+            const header = document.createElement('div');
+            header.className = 'list-section-header';
+            header.textContent = `${title} (${leads.length})`;
+            dom.listContainer.appendChild(header);
 
-            const tagsHtml = lead.tags.map(t => `<span class="tag tag-${t.type}">${t.text}</span>`).join('');
-            
-            row.innerHTML = `
-                <div class="lead-icon-col"><div class="icon-circle">${iconContent}</div></div>
-                <div class="lead-content-col">
-                    <div class="lead-name">${lead.customer} ${tagsHtml}</div>
-                    <div class="lead-notes">${lead.notes || 'No progress notes'}</div>
-                </div>
-                <div class="lead-meta-col">
-                    ${lead.dead ? '<span class="win-prob" style="background:#333; color:white">DEAD</span>' : `<span class="win-prob">${lead.progress}%</span>`}
-                </div>
-            `;
-            dom.listContainer.appendChild(row);
-        });
+            leads.forEach(lead => {
+                const row = document.createElement('div');
+                let statusClass, iconContent, probBadge;
+                if (lead.successful) {
+                    statusClass = 'is-successful';
+                    iconContent = '✓';
+                    probBadge = `<span class="win-prob" style="background:#dcfce7; color:#16a34a; font-weight:800">CLIENT</span>`;
+                } else if (lead.dead) {
+                    statusClass = 'is-dead';
+                    iconContent = '✕';
+                    probBadge = `<span class="win-prob" style="background:#334155; color:white">DEAD</span>`;
+                } else {
+                    statusClass = `phase-${lead.phase}`;
+                    iconContent = lead.phase === 3 ? '★' : '📄';
+                    probBadge = `<span class="win-prob">${lead.progress}%</span>`;
+                }
+
+                row.id = `row-${lead.id}`;
+                row.className = `lead-row ${statusClass} ${state.selectedLeadId === lead.id ? 'active' : ''}`;
+                row.style.animationDelay = `${globalIdx * 0.05}s`;
+                row.onclick = () => selectLead(lead.id);
+                globalIdx++;
+
+                const tagsHtml = lead.tags.map(t => `<span class="tag tag-${t.type}">${t.text}</span>`).join('');
+                row.innerHTML = `
+                    <div class="lead-icon-col"><div class="icon-circle">${iconContent}</div></div>
+                    <div class="lead-content-col">
+                        <div class="lead-name">${lead.customer} ${tagsHtml}</div>
+                        <div class="lead-notes">${lead.notes || 'No progress notes'}</div>
+                    </div>
+                    <div class="lead-meta-col">${probBadge}</div>
+                `;
+                dom.listContainer.appendChild(row);
+            });
+        };
+
+        renderSection(activeLeads, 'Active');
+        renderSection(successfulLeads, 'Successful');
+        renderSection(deadLeads, 'Re-try');
     }
 
     // --- OPTIMIZED SELECTION (NO REFRESH) ---
@@ -276,9 +352,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span class="badge ${val ? 'yes' : 'no'}">${val ? 'Complete' : 'Pending'}</span>
             </div>`;
 
-        const deadBtn = lead.dead 
-            ? `<button class="btn-block-revive" onclick="window.toggleDead('${lead.id}')">♻️ Revive Project</button>` 
-            : `<button class="btn-danger btn-block-danger" onclick="window.toggleDead('${lead.id}')">✕ Mark as Dead</button>`;
+        let footerBtns;
+        if (lead.successful) {
+            footerBtns = `<button class="btn-block-revive" style="flex:1" onclick="window.toggleSuccessful('${lead.id}')">↩ Move to Active</button>`;
+        } else if (lead.dead) {
+            footerBtns = `<button class="btn-block-revive" style="flex:1" onclick="window.toggleDead('${lead.id}')">♻️ Revive Project</button>`;
+        } else {
+            footerBtns = `
+                <button class="btn-block-success" style="flex:1" onclick="window.toggleSuccessful('${lead.id}')">✓ Mark as Successful</button>
+                <button class="btn-danger btn-block-danger" style="flex:1" onclick="window.toggleDead('${lead.id}')">✕ Mark as Dead</button>
+            `;
+        }
 
         // RENDER DETAILS HTML
         dom.detailsPanel.innerHTML = `
@@ -336,7 +420,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         <div class="left-footer">
                             <div style="display:flex; gap:10px; width:100%">
-                                <div style="flex:1">${deadBtn}</div>
+                                ${footerBtns}
                                 <button class="btn-outline" style="width:40px; justify-content:center;" onclick="window.deleteLead('${lead.id}')" title="Delete">🗑</button>
                             </div>
                         </div>
@@ -361,13 +445,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const btn = dom.saveBtn;
         btn.innerText = 'Saving...';
         recalculateScore(lead);
-        
-        // Update list visually without reload
-        const row = document.getElementById(`row-${lead.id}`);
-        if(row) {
-            row.querySelector('.win-prob').innerText = lead.dead ? 'DEAD' : `${lead.progress}%`;
-            row.className = `lead-row ${lead.dead ? 'is-dead' : 'phase-'+lead.phase} active`;
-        }
+        applyFiltersAndSort();
         renderDetails(lead);
         
         const payload = { ...lead, ...lead.pipeline, action: 'update' };
@@ -383,7 +461,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- GLOBAL FUNCTIONS (EXPOSED TO WINDOW) ---
     function setupGlobalFunctions() {
-        window.toggleDead = (id) => { const l = state.allLeads.find(x=>x.id===id); if(l){ l.dead=!l.dead; saveLeadData(l); } };
+        window.toggleDead = (id) => { const l = state.allLeads.find(x=>x.id===id); if(l){ l.dead=!l.dead; if(l.dead) l.successful=false; saveLeadData(l); } };
+        window.toggleSuccessful = (id) => { const l = state.allLeads.find(x=>x.id===id); if(l){ l.successful=!l.successful; if(l.successful) l.dead=false; saveLeadData(l); } };
         window.togglePipeline = (id, key) => { const l = state.allLeads.find(x=>x.id===id); if(l){ l.pipeline[key]=!l.pipeline[key]; saveLeadData(l); } };
         window.toggleTopStatus = (id, key) => { const l = state.allLeads.find(x=>x.id===id); if(l){ l[key]=!l[key]; saveLeadData(l); } };
         window.saveNotes = () => { const l = state.allLeads.find(x=>x.id===state.selectedLeadId); if(l){ l.notes = document.getElementById('notesArea').value; saveLeadData(l); } };
