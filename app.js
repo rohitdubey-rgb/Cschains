@@ -282,11 +282,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 globalIdx++;
 
                 const tagsHtml = lead.tags.map(t => `<span class="tag tag-${t.type}">${t.text}</span>`).join('');
+                const latestNote = (() => { const p = parseNotes(lead.notes); return p.length ? p[0].content : ''; })();
                 row.innerHTML = `
                     <div class="lead-icon-col"><div class="icon-circle">${iconContent}</div></div>
                     <div class="lead-content-col">
                         <div class="lead-name">${lead.customer} ${tagsHtml}</div>
-                        <div class="lead-notes">${lead.notes || 'No progress notes'}</div>
+                        <div class="lead-notes">${latestNote || 'No progress notes'}</div>
                     </div>
                     <div class="lead-meta-col">${probBadge}</div>
                 `;
@@ -448,9 +449,15 @@ document.addEventListener('DOMContentLoaded', () => {
                                             <div class="chat-bubble" style="background:${c.bg}; border-color:${c.border}">
                                                 <div class="chat-text">${formatNoteContent(note.content)}</div>
                                                 <div class="bubble-actions">
-                                                    <button class="bubble-btn edit-btn" onclick="window.editNote('${lead.id}', ${origIdx})" title="Edit">✏</button>
-                                                    <button class="bubble-btn delete-btn" onclick="window.deleteNote('${lead.id}', ${origIdx})" title="Delete">🗑</button>
-                                                    <button class="bubble-btn mail-btn" onclick="window.showNoteMailPanel('${lead.id}', ${origIdx})" title="Email this note">✉</button>
+                                                    <button class="bubble-btn edit-btn" onclick="window.editNote('${lead.id}', ${origIdx})" title="Edit">
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                                                    </button>
+                                                    <button class="bubble-btn delete-btn" onclick="window.deleteNote('${lead.id}', ${origIdx})" title="Delete">
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                                                    </button>
+                                                    <button class="bubble-btn mail-btn" onclick="window.showNoteMailPanel('${lead.id}', ${origIdx})" title="Email this note">
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                                                    </button>
                                                 </div>
                                             </div>
                                             <div class="note-mail-panel" id="mail-panel-${origIdx}" style="display:none">

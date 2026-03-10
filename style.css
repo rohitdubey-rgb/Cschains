@@ -291,14 +291,14 @@ body {
     display: flex; flex-direction: row; gap: 5px;
 }
 .bubble-btn {
-    width: 26px; height: 26px; border-radius: 6px; border: none;
-    cursor: pointer; font-size: 0.85rem; display: flex; align-items: center;
-    justify-content: center; transition: transform 0.1s, filter 0.1s;
+    width: 30px; height: 30px; border-radius: 7px; border: none;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: transform 0.12s, filter 0.12s; flex-shrink: 0;
 }
-.bubble-btn:hover { transform: scale(1.15); filter: brightness(0.88); }
-.bubble-btn.edit-btn   { background: #dbeafe; color: #1d4ed8; }
-.bubble-btn.delete-btn { background: #fee2e2; color: #b91c1c; }
-.bubble-btn.mail-btn   { background: #dcfce7; color: #15803d; }
+.bubble-btn:hover { transform: scale(1.12); filter: brightness(0.85); }
+.bubble-btn.edit-btn   { background: #1d4ed8; color: #fff; }
+.bubble-btn.delete-btn { background: #dc2626; color: #fff; }
+.bubble-btn.mail-btn   { background: #16a34a; color: #fff; }
 
 /* Inline edit mode */
 .note-edit-textarea {
