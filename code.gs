@@ -34,6 +34,10 @@ var FIELD_ALIASES = {
   'parts'       : ['Parts & Spend Received', 'Parts Received', 'Parts and Spend', 'Parts', 'Spend Received'],
   'Current Progress': ['Current Progress', 'Notes', 'Progress Notes', 'Status Notes', 'Progress'],
   'type'        : ['PIM or CM', 'Type', 'Service Type', 'Engagement Type'],
+  'phone'       : ['Phone', 'Mobile', 'Contact Number', 'WhatsApp'],
+  'needsAction' : ['Needs Action', 'Priority Action', 'Action Required'],
+  'hibernated'  : ['Hibernated', 'On Hold', 'Paused', 'Hibernation'],
+  'deadAnalysis': ['Dead Analysis', 'Reason for Loss', 'Loss Analysis', 'Why Dead'],
 };
 
 // Fields that exist only in the frontend state — never write these to the sheet
@@ -196,6 +200,8 @@ function doPost(e) {
     else if (action === 'update')    result = updateRow(payload);
     else if (action === 'delete')    result = deleteRow(payload);
     else if (action === 'sendemail') result = sendEmailAction(payload);
+    else if (action === 'scheduleemail') result = scheduleEmailAction(payload);
+    else if (action === 'uploadimage') result = uploadImageAction(payload);
     else return respondError(new Error('Unknown action: ' + action));
 
     return respond(result);
@@ -423,6 +429,77 @@ function sendEmailAction(payload) {
 // =============================================================================
 // UTILITY — run this manually once from the Apps Script editor to verify setup
 // =============================================================================
+
+function scheduleEmailAction(payload) {
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName('ScheduledEmails');
+  if (!sheet) {
+    sheet = ss.insertSheet('ScheduledEmails');
+    sheet.appendRow(['Recipient Email', 'Recipient Name', 'Customer', 'Notes', 'Scheduled Date', 'Status']);
+    sheet.setFrozenRows(1);
+    sheet.getRange(1,1,1,6).setFontWeight('bold');
+  }
+
+  var recipientEmail = payload.recipientEmail || '';
+  var recipientName  = payload.recipientName  || '';
+  var customer       = payload.customer       || '';
+  var notes          = payload.notes          || '';
+  var scheduledDate  = payload.scheduledDate  || ''; // ISO string
+
+  sheet.appendRow([recipientEmail, recipientName, customer, notes, scheduledDate, 'Pending']);
+  return { success: true, message: 'Email scheduled' };
+}
+
+function uploadImageAction(payload) {
+  try {
+    var folderName = 'SalesTrackerImages';
+    var folders = DriveApp.getFoldersByName(folderName);
+    var folder = folders.hasNext() ? folders.next() : DriveApp.createFolder(folderName);
+    
+    var contentType = payload.contentType || 'image/png';
+    var base64Data = payload.data;
+    var fileName = payload.fileName || 'image_' + new Date().getTime() + '.png';
+    
+    var blob = Utilities.newBlob(Utilities.base64Decode(base64Data), contentType, fileName);
+    var file = folder.createFile(blob);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    
+    return { success: true, url: file.getUrl(), downloadUrl: file.getDownloadUrl() };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+}
+
+// Function to be run by a daily/hourly trigger
+function processScheduledEmails() {
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName('ScheduledEmails');
+  if (!sheet || sheet.getLastRow() < 2) return;
+  
+  var now = new Date();
+  var rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, 6).getValues();
+  
+  rows.forEach(function(row, i) {
+    var status = row[5];
+    if (status === 'Pending') {
+      var scheduledDate = new Date(row[4]);
+      if (scheduledDate <= now) {
+        var payload = {
+          recipientEmail: row[0],
+          recipientName: row[1],
+          customer: row[2],
+          notes: row[3]
+        };
+        var res = sendEmailAction(payload);
+        if (res.success) {
+          sheet.getRange(i + 2, 6).setValue('Sent');
+        } else {
+          sheet.getRange(i + 2, 6).setValue('Error: ' + (res.reason || 'Unknown'));
+        }
+      }
+    }
+  });
+}
 
 function testSetup() {
   var sheet = getSheet();
